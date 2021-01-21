@@ -43,3 +43,4 @@ def run(path):
     modules_to_test = find_tests(path)
     for module_path in modules_to_test:
         execute_module(module_path)
+

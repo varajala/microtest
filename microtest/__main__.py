@@ -9,3 +9,4 @@ from microtest.running import run_from_commandline
 
 if __name__ == '__main__':
     run_from_commandline()
+

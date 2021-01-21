@@ -143,8 +143,8 @@ class TestLogger(Singleton):
         Paths are pathlib.Path objects.
 
         For example:
-        root = usr/Documents/project/
-        extended_path = usr/Documents/project/src/foo.py
+        root = /home/usr/Documents/project/
+        extended_path = /home/usr/Documents/project/src/foo.py
         >>> project/src/foo.py
         """
         relative_path = str(extended_path).replace(str(root.parent), '')
@@ -285,3 +285,4 @@ class TestModule():
                 output_lines.append(test.info)
         output_lines.append('\n')
         return '\n'.join(output_lines)
+

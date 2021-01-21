@@ -27,3 +27,5 @@ def test(func):
         finally:
             logger.add_test(func, status)
     return wrapper
+    
+    

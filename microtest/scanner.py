@@ -12,7 +12,10 @@ import pathlib
 from microtest.logger import TestLogger
 
 
-def find_tests(root_path):
+ID_FILE = '__test__.py'
+
+
+def find_tests(root_path, id_file_not_required=True):
     """
     Find all test directories starting from root_path
     and return a tuple of found modules. The path given
@@ -34,7 +37,7 @@ def find_tests(root_path):
 
 
 def is_test_dir(path):
-    return '__test__.py' in os.listdir(path)
+    return ID_FILE in os.listdir(path)
 
 
 def is_python_module(filename):
@@ -48,3 +51,5 @@ def execute_module(path, exec_name='__main__'):
         runpy.run_path(path, run_name=exec_name)
     except Exception as exc:
         logger.log_module_execution_error(exc, path)
+        
+        
