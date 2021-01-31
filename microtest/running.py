@@ -1,14 +1,37 @@
 """
 Author: Valtteri Rajalainen
-Edited: 21.1.2021
+Edited: 30.1.2021
 """
 
 import sys
 import os
 import pathlib
+import runpy
 
-from microtest.scanner import execute_module, find_tests
+from microtest.scanner import find_tests
 from microtest.logger import TestLogger
+
+
+EXEC_NAME = '__main__'
+
+
+def run(root_path):
+    """
+    Run the scanner from the given path
+    and execute all found modules.
+    """
+    modules_to_test = find_tests(root_path)
+    for module_path in modules_to_test:
+        execute_module(module_path)
+
+
+def execute_module(path, exec_name=EXEC_NAME):
+    logger = TestLogger()
+    logger.add_module(path)
+    try:
+        runpy.run_path(path, run_name=exec_name)
+    except Exception as exc:
+        logger.module_execution_error(exc)
 
 
 def run_from_commandline():
@@ -16,31 +39,22 @@ def run_from_commandline():
     Run the scanner and execute all found modules
     with the commandline arguments.
     """
-    arguments = sys.argv[1:]
-    settings = {
-        '-v':TestLogger().set_verbose,
-        '--verbose':TestLogger().set_verbose,
-        '-m':TestLogger().set_minimal,
-        '--minimal':TestLogger().set_minimal,
+    ARGUMENTS = {
+    '-m':TestLogger().minimal_output,
+    '--minimal':TestLogger().minimal_output,
+    '-v':TestLogger().verbose_output,
+    '--verbose':TestLogger().verbose_output,
     }
+    arguments = sys.argv[1:]
     if len(arguments) > 0:
         cwd_path = pathlib.Path(os.getcwd())
         path = cwd_path.joinpath(arguments.pop(-1)).resolve()
         #process extra args here
-        for setting in settings.keys():
-            if setting in arguments:
-                settings[setting]()
+        while arguments:
+            arg = arguments.pop(0)
+            if arg not in ARGUMENTS:
+                continue
+            ARGUMENTS[arg]()
         if path.exists():
             run(path)
-
-
-def run(path):
-    """
-    Run the scanner from the given path
-    and execute all found modules.
-    """
-    TestLogger().root_path = path
-    modules_to_test = find_tests(path)
-    for module_path in modules_to_test:
-        execute_module(module_path)
-
+            

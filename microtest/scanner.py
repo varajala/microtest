@@ -2,11 +2,10 @@
 Script for finding all tests in a directory and its children.
 
 Author: Valtteri Rajalainen
-Edited: 21.1.2021
+Edited: 31.1.2021
 """
 
 import os
-import runpy
 import pathlib
 
 from microtest.logger import TestLogger
@@ -15,7 +14,7 @@ from microtest.logger import TestLogger
 ID_FILE = '__test__.py'
 
 
-def find_tests(root_path, id_file_not_required=True):
+def find_tests(root_path):
     """
     Find all test directories starting from root_path
     and return a tuple of found modules. The path given
@@ -27,7 +26,7 @@ def find_tests(root_path, id_file_not_required=True):
     dirs_to_scan = [root_path]
     while dirs_to_scan:
         dir_path = dirs_to_scan.pop(0)
-        for entry in os.scandir(dir_path):
+        for entry in scan_directory_safely(dir_path):
             if entry.is_dir():
                 if is_test_dir(entry.path):
                     dirs_to_scan.append(entry.path)
@@ -36,20 +35,31 @@ def find_tests(root_path, id_file_not_required=True):
     return tuple(modules)
 
 
+def scan_directory_safely(path):
+    """
+    Safely scan a directory.
+    Returns an emty list if any errors
+    occur while scanning the directory.
+    """
+    result = []
+    try:
+        result = os.scandir(path)
+    except (FileNotFoundError, PermissionError, OSError):
+        pass
+    return result
+
+
 def is_test_dir(path):
-    return ID_FILE in os.listdir(path)
+    """Check if directory contains the ID_FILE."""
+    listed_dir = []
+    try:
+        listed_dir = os.listdir(path)
+    except (FileNotFoundError, PermissionError, OSError):
+        pass
+    return ID_FILE in listed_dir
 
 
 def is_python_module(filename):
     return filename.endswith('.py')
-
-
-def execute_module(path, exec_name='__main__'):
-    logger = TestLogger()
-    logger.add_module(path)
-    try:
-        runpy.run_path(path, run_name=exec_name)
-    except Exception as exc:
-        logger.log_module_execution_error(exc, path)
         
         
