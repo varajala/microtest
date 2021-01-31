@@ -59,15 +59,12 @@ Now executing this module normally will produce the following output:
   ===========================================================================
   Started testing...
   ===========================================================================
-  Ran 1 test.
-  
+  Ran 1 tests.
+
   OK.
  ```
  If the test function is not called, it will not be included in the test suite.
  
- ### Testing multiple modules
- 
- This library provides a handy scanning tool to locate Python modules.
  Running microtest from the command line is preferrable to executing single modules directly.
  Any function decorated with the test-decorator will catch any errors, but when running a single module
  directly, any error thown outside the test cases won't be handeled and can effect the test output.
@@ -94,12 +91,44 @@ Now executing this module normally will produce the following output:
   
   This will give the resulting output:
   ```shell
-  ===========================================================================
-  Started testing...
-  ===========================================================================
-  Executed 1 module.
-  
-  Ran 1 test.
-  
-  OK.
+===========================================================================
+Started testing...
+===========================================================================
+Executed 1 modules in 0.002s.
+Ran 1 tests.
+
+OK.
   ```
+  
+  Now let's add more modules to test. Microtest provides a scanner that finds Python modules in subdirectories as well. 
+  These subdirectories need to contain a file called **\_\_test\_\_.py**. This is an indicator that this directory should be included
+  in the test suite. These modules are executed normally, so these can contain test code as well.
+  
+  Let's run microtest with the following filestructure:
+  
+  ```shell
+.
+├── dir1
+│   ├── module.py
+│   ├── subdir
+│   │   ├── module.py
+│   │   ├── __test__.py
+│   │   └── test.py
+│   └── __test__.py
+├── dir2
+│   ├── module.py
+│   └── __test__.py
+├── module.py
+└── test.py
+  ```
+  Output:
+  
+```shell
+===========================================================================
+Started testing...
+===========================================================================
+Executed 9 modules in 0.049s.
+Ran 23 tests.
+
+OK.
+ ```
