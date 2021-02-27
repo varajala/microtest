@@ -7,6 +7,9 @@ Edited: 30.1.2021
 
 from microtest.logger import TestLogger
 
+import traceback as tb
+import sys
+
 
 def test(func):
     """Make a single function part of the test suite."""
@@ -22,5 +25,4 @@ def test(func):
         finally:
             logger.add_test(func, error)
     return wrapper
-    
     

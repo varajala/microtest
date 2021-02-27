@@ -6,6 +6,7 @@ Edited: 31.1.2021
 """
 
 import traceback
+import sys
 import timeit
 
 from microtest.utils import TestCase, TestModule, Singleton, OutputProvider
@@ -128,7 +129,7 @@ class TestLogger(Singleton, OutputProvider):
         tb = exception.__traceback__
         error_type = exception.__class__.__name__
         self.log(f"ERROR type of <{error_type}> occured while executing a module.\n")
-        for line in traceback.format_tb(tb):
+        for line in traceback.format_exception(error_type, exception, tb):
             self.log(line)
         self.log(self.OUTPUT_WIDTH * '=')
         
@@ -137,7 +138,8 @@ class TestLogger(Singleton, OutputProvider):
         tb = exception.__traceback__
         error_type = exception.__class__.__name__
         self.log(f"FAILED because of <{error_type}>\n")
-        for line in traceback.format_tb(tb):
+        #traceback.print_exception(error_type, exception, tb)
+        for line in traceback.format_exception(error_type, exception, tb):
             self.log(line)
         self.log(self.OUTPUT_WIDTH * '=')        
 
