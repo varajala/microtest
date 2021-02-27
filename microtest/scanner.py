@@ -55,7 +55,7 @@ def is_test_dir(path):
 
 
 def is_test_module(filename):
-    TEST_MODULE_EXP = re.compile(r'test_\w+\.py|\w+_test\.py|test\.py')
+    TEST_MODULE_EXP = re.compile(r'tests?_\w+\.py|\w+_tests?\.py|tests?\.py')
     match = re.fullmatch(TEST_MODULE_EXP, filename)
     return match is not None
         
