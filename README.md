@@ -23,7 +23,7 @@ On Linux and Mac:
     
 You can install Microtest directly from PyPI:
 
-Winodws:
+Windows:
 
     pip install microtest
     
@@ -101,7 +101,28 @@ OK.
   ```
   
 Now let's add more modules to test. Let's run microtest with the following filestructure:
+```shell
+.
+├── test_1.py
+├── test_2.py
+└── testpkg
+    ├── spam.py
+    ├── subpkg
+    │   ├── test_4.py
+    │   └── test_5.py
+    └── test_3.py
+```
 
+Output:
+```shell
+===========================================================================
+Started testing...
+===========================================================================
+Executed 5 modules in 0.004s.
+Ran 10 tests.
+
+OK.
+ ```
 
 ### Output
 
@@ -111,6 +132,42 @@ This will prevent the traceback logging from errors. For more verbose output use
 THe verbose mode adds a breakdown of all the executed modules and the testcases in them.
 
 Here's how the verbose output looks like:
+
+```shell
+===========================================================================
+Started testing...
+===========================================================================
+Module: /home/varajala/dev/test/test_2.py
+main ....................................................................... OK
+
+
+Module: /home/varajala/dev/test/test_1.py
+hello ...................................................................... OK
+test_assertion ............................................................. OK
+
+
+Module: /home/varajala/dev/test/testpkg/test_3.py
+hello ...................................................................... OK
+hello ...................................................................... OK
+hello ...................................................................... OK
+hello ...................................................................... OK
+hello ...................................................................... OK
+
+
+Module: /home/varajala/dev/test/testpkg/subpkg/test_4.py
+main ....................................................................... OK
+
+
+Module: /home/varajala/dev/test/testpkg/subpkg/test_5.py
+Test.test_method ........................................................... OK
+
+
+===========================================================================
+Executed 5 modules in 0.004s.
+Ran 10 tests.
+
+OK.
+ ```
 
 Notice that the **filepath always has to be the last argument provided.**
 
