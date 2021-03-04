@@ -20,32 +20,16 @@ On Windows:
 On Linux and Mac:
 
     python3 --version
-
-Download the source code in a .zip-folder or fork and clone this project to your local repository.
-Next navigate to the toplevel folder *microtest*.
-
-Here you should see the following items in this drectory: ***microtest***, *README.md*, *LICENSE.txt*,  *setup.py*.
-
-Next type the following command to your terminal:
-
-On Windows:
-
-    pip install .
-  
-On Linux and Mac:
-
-    pip3 install .
-    
     
 ## Use
 
 ### Basic use
-To create test cases, import test from microtest.decorators.
+To create test cases, import test from microtest.
 After this you can apply this decorator to any function or method to make it part of the test suite.
 This needs to be called somewhere in the module to do any testing. Here's a simple example:
 
 ```python
-from microtest.decorators import test
+from microtest import test
 
 @test
 def test_function():
@@ -80,7 +64,13 @@ Now executing this module normally will produce the following output:
  
     python3 -m microtest <path-to-the-directory>
     
-  This will result microtest to search all Python modules inside the directory and execute them.
+  This will result microtest to search all Python modules with a specific name inside the directory and its subdirectories and execute them.
+  The following Python modules are executed:
+  
+  - Those starting with the name test\_ or tests\_
+  - Those ending with the name \_test or \_tests
+  - Those with the name test.py or tests.py
+  
   **All modules will be executed with the \_\_name\_\_ - attribute set to '\_\_main\_\_'.**
   
   Let's run the previous example via the command line.
@@ -100,35 +90,4 @@ Ran 1 tests.
 OK.
   ```
   
-  Now let's add more modules to test. Microtest provides a scanner that finds Python modules in subdirectories as well. 
-  These subdirectories need to contain a file called **\_\_test\_\_.py**. This is an indicator that this directory should be included
-  in the test suite. These modules are executed normally, so these can contain test code as well.
-  
-  Let's run microtest with the following filestructure:
-  
-  ```shell
-.
-├── dir1
-│   ├── module.py
-│   ├── subdir
-│   │   ├── module.py
-│   │   ├── __test__.py
-│   │   └── test.py
-│   └── __test__.py
-├── dir2
-│   ├── module.py
-│   └── __test__.py
-├── module.py
-└── test.py
-  ```
-  Output:
-  
-```shell
-===========================================================================
-Started testing...
-===========================================================================
-Executed 9 modules in 0.049s.
-Ran 23 tests.
-
-OK.
- ```
+Now let's add more modules to test. Let's run microtest with the following filestructure:
