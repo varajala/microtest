@@ -21,6 +21,16 @@ On Linux and Mac:
 
     python3 --version
     
+You can install Microtest directly from PyPI:
+
+Winodws:
+
+    pip install microtest
+    
+Mac and Linux:
+
+    pip3 install microtest
+
 ## Use
 
 ### Basic use
@@ -91,3 +101,61 @@ OK.
   ```
   
 Now let's add more modules to test. Let's run microtest with the following filestructure:
+
+
+### Output
+
+By default microtest will display a traceback of all failed tests and errors in addition to the start and finish notifications.
+Currently there are two more modes for output verbosity. If you want minimal output, use the flag **-m**, or **--minimal**.
+This will prevent the traceback logging from errors. For more verbose output use the **-v**, or **--verbose** flag.
+THe verbose mode adds a breakdown of all the executed modules and the testcases in them.
+
+Here's how the verbose output looks like:
+
+Notice that the **filepath always has to be the last argument provided.**
+
+### Fixtures and more advanced tests
+
+Here's a suggestion for testing:
+
+ ```python
+import pathlib
+
+from microtest import test
+from yourapp.database import DatabaseAPI
+
+TEST_DATABASE = pathlib.Path(__file__).parent.joinpath('test_db.db')
+
+
+def setup():
+    DatabaseAPI.connect(TEST_DATABASE)
+    
+def cleanup():
+    DatabaseAPI.disconnect()
+
+
+def run():
+    setup()
+    #insert test cases here
+    test_case1()
+    test_case2()
+    cleanup()
+
+
+@test
+def test_case1():
+    pass
+
+
+@test
+def test_case2():
+    pass
+
+
+if __name__ == '__main__':
+    run()
+  ```
+ It's easy to setup more complex fixtures and setup/cleanup actions, since there are no limitations by the testing library.
+ Python offers great metaprogramming tools, so use them to implement features like skipping, fixtures and so on.
+ Microtest mainly provides a tool to search tests inside a directory structure and execute them.
+ You can also use microtest only as a scanner to find tests and use other testing tools, such as Python's builtin unittest module.
