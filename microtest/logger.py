@@ -2,7 +2,7 @@
 Utilities for testing.
 
 Author: Valtteri Rajalainen
-Edited: 31.1.2021
+Edited: 4.3.2021
 """
 
 import traceback
@@ -138,7 +138,6 @@ class TestLogger(Singleton, OutputProvider):
         tb = exception.__traceback__
         error_type = exception.__class__.__name__
         self.log(f"FAILED because of <{error_type}>\n")
-        #traceback.print_exception(error_type, exception, tb)
         for line in traceback.format_exception(error_type, exception, tb):
             self.log(line)
         self.log(self.OUTPUT_WIDTH * '=')        

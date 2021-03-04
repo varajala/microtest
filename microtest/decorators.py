@@ -2,13 +2,12 @@
 Main decorators that define the API for the test tools.
 
 Author: Valtteri Rajalainen
-Edited: 30.1.2021
+Edited: 4.3.2021
 """
 
 from microtest.logger import TestLogger
 
-import traceback as tb
-import sys
+__all__ = ['test',]
 
 
 def test(func):

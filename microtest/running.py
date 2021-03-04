@@ -1,6 +1,6 @@
 """
 Author: Valtteri Rajalainen
-Edited: 30.1.2021
+Edited: 4.3.2021
 """
 
 import sys
@@ -49,7 +49,6 @@ def run_from_commandline():
     if len(arguments) > 0:
         cwd_path = pathlib.Path(os.getcwd())
         path = cwd_path.joinpath(arguments.pop(-1)).resolve()
-        #process extra args here
         while arguments:
             arg = arguments.pop(0)
             if arg not in ARGUMENTS:

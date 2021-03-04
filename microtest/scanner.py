@@ -44,16 +44,6 @@ def scan_directory_safely(path):
     return result
 
 
-def is_test_dir(path):
-    """Check if directory contains the ID_FILE."""
-    listed_dir = []
-    try:
-        listed_dir = os.listdir(path)
-    except (FileNotFoundError, PermissionError, OSError):
-        pass
-    return ID_FILE in listed_dir
-
-
 def is_test_module(filename):
     TEST_MODULE_EXP = re.compile(r'tests?_\w+\.py|\w+_tests?\.py|tests?\.py')
     match = re.fullmatch(TEST_MODULE_EXP, filename)
