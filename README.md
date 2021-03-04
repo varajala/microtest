@@ -21,15 +21,18 @@ On Linux and Mac:
 
     python3 --version
     
-You can install Microtest directly from PyPI:
+To install microtest download and unpack the zip folder with the source code, or fork and clone this project to
+your machine. After this navigate to the toplevel directory where the setup.py-file is located.
+Here, give the following command to install the package with pip:
 
 Windows:
 
-    pip install microtest
-    
-Mac and Linux:
+    pip install .
 
-    pip3 install microtest
+
+Linux:
+
+    pip3 install .
 
 ## Use
 
