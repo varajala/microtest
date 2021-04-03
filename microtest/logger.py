@@ -9,7 +9,7 @@ import traceback
 import sys
 import timeit
 
-from microtest.utils import TestCase, TestModule, Singleton, OutputProvider
+from microtest.utils import TestCase, TestModule, Singleton, OutputProvider, Colors
 
 
 class TestLogger(Singleton, OutputProvider):
@@ -119,16 +119,16 @@ class TestLogger(Singleton, OutputProvider):
             self.log(f'Executed {self.modules_tested} modules in {time}s.')
         self.log(f'Ran {self.tests_performed} tests.\n')
         if self.all_passed:
-            self.log('OK.')
+            self.log(Colors.color_ok('OK.\n'))
         else:
-            self.log(f'{self.total_fails} FAILED')
-            self.log(f'{self.total_errors} ERRORS')
+            self.log(str(self.total_fails) + ' ' + Colors.color_error('FAILED')) 
+            self.log(str(self.total_errors) + ' ' + Colors.color_error('ERRORS\n'))
         
         
     def log_error(self, exception):
         tb = exception.__traceback__
         error_type = exception.__class__.__name__
-        self.log(f"ERROR type of <{error_type}> occured while executing a module.\n")
+        self.log(Colors.color_error(f"ERROR type of <{error_type}> occured while executing a module.\n"))
         for line in traceback.format_exception(error_type, exception, tb):
             self.log(line)
         self.log(self.OUTPUT_WIDTH * '=')
@@ -137,7 +137,7 @@ class TestLogger(Singleton, OutputProvider):
     def log_fail(self, exception):
         tb = exception.__traceback__
         error_type = exception.__class__.__name__
-        self.log(f"FAILED because of <{error_type}>\n")
+        self.log(Colors.color_error(f"FAILED because of <{error_type}>\n"))
         for line in traceback.format_exception(error_type, exception, tb):
             self.log(line)
         self.log(self.OUTPUT_WIDTH * '=')        

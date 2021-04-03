@@ -2,10 +2,34 @@
 Classes:
 > TestCase
 > TestModule
+> OutputProvider
+> Colors
 
 Author: Valtteri Rajalainen
-Edited: 31.1.2021
+Edited: 3.4.2021
 """
+
+class Colors:
+
+    OK_GREEN = '\033[92m'
+    FAILED_RED = '\033[91m'
+    INFO_CYAN = '\033[96m'
+    RESET = '\033[0m'
+
+    @classmethod
+    def color_ok(cls, text):
+        return cls.OK_GREEN + text + cls.RESET
+
+
+    @classmethod
+    def color_error(cls, text):
+        return cls.FAILED_RED + text + cls.RESET
+
+    
+    @classmethod
+    def color_info(cls, text):
+        return cls.INFO_CYAN + text + cls.RESET
+
 
 class OutputProvider:
     
@@ -52,9 +76,9 @@ class TestCase(OutputProvider):
     result status (OK, ERROR, FAIL).
     """
     
-    OK_STATUS = 'OK'
-    ERROR_STATUS = 'ERROR'
-    FAIL_STATUS = 'FAILED'
+    OK_STATUS = Colors.color_ok('OK')
+    ERROR_STATUS = Colors.color_error('ERROR')
+    FAIL_STATUS = Colors.color_error('FAILED')
 
     def __init__(self, func, error_type):
         self.func = func
@@ -63,10 +87,10 @@ class TestCase(OutputProvider):
 
     def check_status(self, error_type):
         if error_type == 'AssertionError':
-            return 'FAILED'
+            return self.FAIL_STATUS
         if error_type is not None:
-            return 'ERROR'
-        return 'OK'
+            return self.ERROR_STATUS
+        return self.OK_STATUS
         
         
     @property
@@ -115,7 +139,7 @@ class TestModule(OutputProvider):
     @property
     def output(self):
         output_lines = []
-        output_lines.append(f'Module: {self.path}')
+        output_lines.append(f'Module: {Colors.color_info(str(self.path))}')
         for test in self._testcases:
             output_lines.append(test.output)
         if not self._testcases:
