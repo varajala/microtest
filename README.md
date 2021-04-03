@@ -3,7 +3,7 @@ Simple but powerful testing utilities for Python.
 
 
 ## Table of contents
-- [Intallation](installation)
+- [Installation](installation)
 - [Use](use)
 
 ## Installation
@@ -22,7 +22,7 @@ On Linux and Mac:
     python3 --version
     
 To install microtest download and unpack the zip folder with the source code, or fork and clone this project to
-your machine. After this navigate to the toplevel directory where the setup.py-file is located.
+a local repository. After this navigate to the toplevel directory where the **setup.py**-file is located.
 Here, give the following command to install the package with pip:
 
 Windows:
@@ -176,7 +176,7 @@ Notice that the **filepath always has to be the last argument provided.**
 
 ### Fixtures and more advanced tests
 
-Here's a suggestion for testing:
+Here's a suggestion for a template:
 
  ```python
 import pathlib
