@@ -9,8 +9,6 @@ import os
 import pathlib
 import re
 
-from microtest.logger import TestLogger
-
 
 def find_tests(root_path):
     """

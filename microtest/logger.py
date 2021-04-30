@@ -9,6 +9,7 @@ import traceback
 import sys
 import timeit
 
+
 from microtest.utils import TestCase, TestModule, Singleton, OutputProvider, Colors
 
 
