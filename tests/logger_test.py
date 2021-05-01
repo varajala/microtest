@@ -30,12 +30,7 @@ class Tests(unittest.TestCase):
             task = Task(Task.START)
             queue.put(task)
 
-            data = {
-                'errors':0,
-                'tests':0,
-                't_start':0.0,
-                't_stop':0.0
-            }
+            data = StopInfo(0, 0, 0.0, 0.0)
             task = Task(Task.STOP, data)
             queue.put(task)
             t.join()

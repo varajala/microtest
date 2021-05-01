@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Dict
 
 
 @dataclass
@@ -17,6 +17,15 @@ class TestCase:
 
 
 @dataclass
+class StopInfo:
+    errors: int
+    tests: int
+    t_start: float
+    t_stop: float
+    modules: Dict[str, TestCase] = None
+
+
+@dataclass
 class Colors:
     OK_GREEN = '\033[92m'
     FAILED_RED = '\033[91m'
@@ -31,14 +40,13 @@ START -> Testing started, logger will show start info based on output mode.
          Data is None.
 
 STOP -> Testing halted.
-        Data is an dictionary with the following entries:
-            > 'errors':int
-            > 'tests':int
-            > 't_start':float
-            > 't_stop':float
+        Data is an instance of StopInfo.
+        Providing modules is optional.
 
 TEST -> A new testcase was executed.
         Data is an instance of TestCase.
+
+EXEC_ERR -> An exception during the execution of a module.
 """
 
 class Task:

@@ -23,12 +23,13 @@ def start_testing():
 def stop_testing():
     global t_start, t_stop
     t_stop = timeit.default_timer()
-    data = {
-        'errors':errors,
-        'tests':tests,
-        't_start':t_start,
-        't_stop':t_stop
-    }
+    data = StopInfo(
+        errors,
+        tests,
+        t_start,
+        t_stop,
+        modules.copy()
+    )
     task = Task(Task.STOP, data)
     logger_queue.put(task)
 

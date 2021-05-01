@@ -68,6 +68,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(task.type, Task.TEST)
 
         test_obj = task.data
+        self.assertTrue(isinstance(test_obj, TestCase))
         self.assertEqual(test_obj.func, 'testfunc')
         self.assertEqual(test_obj.success, True)
         self.assertEqual(test_obj.exception, None)
@@ -77,10 +78,7 @@ class Tests(unittest.TestCase):
         task = queue.get()
         self.assertEqual(task.type, Task.STOP)
         data = task.data
-        self.assertTrue('errors' in data)
-        self.assertTrue('tests' in data)
-        self.assertTrue('t_start' in data)
-        self.assertTrue('t_stop' in data)
+        self.assertTrue(isinstance(data, StopInfo))
 
 
 

@@ -71,27 +71,23 @@ def stop(data):
     global running
     running = False
     
-    assert isinstance(data, dict)
-    assert 'errors' in data
-    assert 'tests' in data
-    assert 't_start' in data
-    assert 't_stop' in data
+    assert isinstance(data, StopInfo)
 
     write_separator('-', 2)
 
-    t_delta = round(data['t_stop'] - data['t_start'], 3)
+    t_delta = round(data.t_stop - data.t_start, 3)
     write_out(f'Finished in {t_delta}s.\n\n')
 
-    if 'modules' in data:
-        m = data[modules]
+    if data.modules:
+        m = len(data.modules)
         msg = f'Executed {m} modules.\n' if m != 1 else f'Executed 1 module.\n'
         write_out(msg)
 
-    n = data['tests']
+    n = data.tests
     msg = f'Ran {n} tests.\n\n' if n != 1 else 'Ran 1 test.\n\n'
     write_out(msg)
 
-    errors = data['errors']
+    errors = data.errors
     if errors:
         write_out(f'ERRORS: {errors}\n', Colors.FAILED_RED)
         return
