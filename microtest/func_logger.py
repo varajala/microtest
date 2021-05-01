@@ -13,8 +13,9 @@ out = sys.stdout
 use_colors = False
 width = 75
 running = True
+wait_period = 0.1
 
-def run_logger(queue):
+def run(queue):
     global use_colors
     if out.isatty():
         use_colors = True
@@ -22,12 +23,12 @@ def run_logger(queue):
     tasks = {
         Task.START:log_start_info,
         Task.TEST:log_test_info,
-        Task.STOP:log_stop_info,
+        Task.STOP:stop,
     }
 
     while running:
         if queue.empty():
-            time.sleep(0.1)
+            time.sleep(wait_period)
             continue
 
         task = queue.get()
@@ -36,7 +37,7 @@ def run_logger(queue):
 
 
 def write_out(text, color=None):
-    if not use_colours:
+    if not use_colors:
         out.write(text)
         return
     out.write(color)
@@ -66,7 +67,10 @@ def log_modules(data):
     pass
 
 
-def log_stop_info(data):
+def stop(data):
+    global running
+    running = False
+    
     assert isinstance(data, dict)
     assert 'errors' in data
     assert 'tests' in data

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typein import Any
+from typing import Any
 
 
 @dataclass
@@ -24,13 +24,30 @@ class Colors:
     RESET = '\033[0m'
 
 
+"""
+Task types:
+
+START -> Testing started, logger will show start info based on output mode.
+         Data is None.
+
+STOP -> Testing halted.
+        Data is an dictionary with the following entries:
+            > 'errors':int
+            > 'tests':int
+            > 't_start':float
+            > 't_stop':float
+
+TEST -> A new testcase was executed.
+        Data is an instance of TestCase.
+"""
+
 class Task:
     
     START = 'start'
     STOP = 'stop'
     TEST = 'test'
 
-    def __init__(self, type_, data):
+    def __init__(self, type_, data=None):
         self.type_ = type_
         self.data = data
 
