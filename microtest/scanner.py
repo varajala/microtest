@@ -10,7 +10,7 @@ import pathlib
 import re
 
 
-def find_tests(root_path):
+def find_tests(root_path: pathlib.Path):
     """
     Find all test directories starting from root_path
     and return a tuple of found modules. The path given
