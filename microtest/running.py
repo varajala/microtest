@@ -4,12 +4,14 @@ Edited: 3.5.2021
 """
 
 import os
+import sys
 import runpy
 import threading
 
 import microtest.scanner as scanner
 import microtest.logger as logger
 import microtest.core as core
+from microtest.data import *
 
 
 EXEC_NAME = '__main__'
@@ -21,13 +23,13 @@ def run(root_path):
     and execute all found modules.
     """
     path = os.path.abspath(root_path)
-    modules_to_test = (path,)
+    modules = (path,)
     if os.path.isdir(path):
-        modules_to_test = scanner.find_tests(path)
-    _exec_modules(modules_to_test)
+        modules = scanner.find_tests(path)
+        if not modules:
+            sys.stdout.write(f'No tests executed.\n')
+            return
 
-
-def _exec_modules(modules):
     logger_thread = threading.Thread(target=logger.run, args=(core.logger_queue,))
     logger_thread.start()
 
@@ -49,23 +51,36 @@ def _exec_modules(modules):
     core.stop_testing()
     logger_thread.join()
 
-"""
-def run_from_commandline():
-    ARGUMENTS = {
-    '-m':TestLogger().minimal_output,
-    '--minimal':TestLogger().minimal_output,
-    '-v':TestLogger().verbose_output,
-    '--verbose':TestLogger().verbose_output,
+
+def verbose_output():
+    logger.output_mode = Output.VERBOSE
+
+def minimal_output():
+    logger.output_mode = Output.MINIMAL
+
+
+def run_from_commandline(args):
+    flags = {
+        '-m':minimal_output,
+        '--minimal':minimal_output,
+        '-v':verbose_output,
+        '--verbose':verbose_output,
     }
-    arguments = sys.argv[1:]
-    if len(arguments) > 0:
-        cwd_path = pathlib.Path(os.getcwd())
-        path = cwd_path.joinpath(arguments.pop(-1)).resolve()
-        while arguments:
-            arg = arguments.pop(0)
-            if arg not in ARGUMENTS:
-                continue
-            ARGUMENTS[arg]()
-        if path.exists():
-            run(path)
-"""
+
+    cwd = os.getcwd()
+    path = cwd
+    if args:
+        path = args.pop(-1)
+        if not os.path.exists(path):
+            sys.stderr.write(f'Invalid path: {path}.\n')
+            return
+        
+        if not os.path.isabs(path):
+            path = os.path.join(cwd, path)
+
+    for arg in args:
+        if arg in flags:
+            func = flags[arg]
+            func()
+
+    run(path)

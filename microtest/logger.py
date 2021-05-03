@@ -79,9 +79,6 @@ def write_traceback(exc):
 
 
 def log_start_info(data):
-    if output_mode == Output.MINIMAL:
-        return
-    
     write_separator('=')
     write_out('Started testing...\n')
     write_separator('=')
@@ -100,13 +97,30 @@ def log_exec_error(data):
     exc = data.exception
     exc_name = exc.__class__.__name__
     
-    write_out(f'{exc_name} occured in module: {data.path}\n\n', Colors.FAILED_RED)
-    write_traceback(exc)
-    write_separator('-')
+    if output_mode != Output.MINIMAL:
+        write_out(f'{exc_name} occured in module: {data.path}\n\n', Colors.FAILED_RED)
+        write_traceback(exc)
+        write_separator('-')
 
 
 def log_module_info(module_dict):
     assert isinstance(module_dict, dict)
+    for module, tests in module_dict.items():
+        write_out(module, Colors.INFO_CYAN)
+        write_out(':\n')
+        for test in tests:
+            write_out(test.func)
+            padding = width - len(test.func) - 7
+            write_out('' + padding * '.' + ' ')
+
+            msg = 'OK'
+            color = Colors.OK_GREEN
+            if not test.success:
+                msg = 'ERROR'
+                color = Colors.FAILED_RED
+            write_out(msg, color)
+            write_out('\n')
+        write_out('\n\n')
 
 
 def stop(data):
@@ -116,7 +130,8 @@ def stop(data):
     assert isinstance(data, StopInfo)
 
     if data.modules and output_mode == Output.VERBOSE:
-        self.log_module_info(data.modules)
+        log_module_info(data.modules)
+        write_separator('-')
 
     if data.modules:
         m = len(data.modules)
