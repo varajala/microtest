@@ -54,6 +54,8 @@ TEST -> A new testcase was executed.
 
 EXEC_ERR -> An exception during the execution of a module.
             Data is an instance of ModuleExecError.
+
+LOG_INFO -> Print message to stdout. Data is a string.
 """
 
 class Task:
@@ -62,6 +64,7 @@ class Task:
     STOP = 'stop'
     TEST = 'test'
     EXEC_ERR = 'exec_err'
+    LOG_INFO = 'log'
 
     def __init__(self, type_, data=None):
         self.type_ = type_
