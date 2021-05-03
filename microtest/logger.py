@@ -22,6 +22,7 @@ def default_dispatcher(task):
         Task.TEST:log_test_info,
         Task.STOP:stop,
         Task.EXEC_ERR:log_exec_error,
+        Task.LOG_INFO:log_info,
     }
 
     assert isinstance(task, Task)
@@ -87,9 +88,17 @@ def log_start_info(data):
 def log_test_info(data):
     assert isinstance(data, TestCase)
     if not data.success and output_mode != Output.MINIMAL:
-        write_out(f'Failed assertion:\n\n', Colors.FAILED_RED)
+        exc_name = data.exception.__class__.__name__
+        write_out(f'{exc_name} occured:\n\n', Colors.FAILED_RED)
         write_traceback(data.exception)
         write_separator('-')
+
+
+def log_info(data):
+    assert isinstance(data, str)
+    if output_mode != Output.MINIMAL:
+        write_out('  > ', Colors.INFO_CYAN)
+        write_out(data.strip() + '\n\n')
 
 
 def log_exec_error(data):
@@ -98,7 +107,8 @@ def log_exec_error(data):
     exc_name = exc.__class__.__name__
     
     if output_mode != Output.MINIMAL:
-        write_out(f'{exc_name} occured in module: {data.path}\n\n', Colors.FAILED_RED)
+        write_out(f'{exc_name} occured while executing  module:\n', Colors.FAILED_RED)
+        write_out(f'{data.path}\n\n')
         write_traceback(exc)
         write_separator('-')
 
