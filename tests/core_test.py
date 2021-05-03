@@ -81,6 +81,19 @@ class Tests(unittest.TestCase):
         self.assertTrue(isinstance(data, StopInfo))
 
 
+    def test_module_exec_errors(self):
+        queue = core.logger_queue
+        self.assertTrue(queue.empty())
+
+        module_path = '/home/user/dev/module.py'
+        exception = SyntaxError()
+        exec_error = ModuleExecError(module_path, exception)
+        core.register_module_exec_error(module_path, exception)
+        
+        self.assertFalse(queue.empty())
+        task = queue.get()
+        self.assertEqual(task.data.path, module_path)
+        self.assertEqual(task.data.exception, exception)
 
 
 if __name__ == '__main__':

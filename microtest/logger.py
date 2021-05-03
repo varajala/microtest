@@ -1,148 +1,141 @@
 """
-Utilities for testing.
-
 Author: Valtteri Rajalainen
-Edited: 4.3.2021
+Edited: 3.5.2021
 """
 
-import traceback
+import time
 import sys
-import timeit
+import os
+import traceback
+
+from microtest.data import *
 
 
-from microtest.utils import TestCase, TestModule, Singleton, OutputProvider, Colors
+"""
+Dispathcer is a callable object that takes the task as named argument
+and returns a callable depending on the task's type that takes
+the task.data object as named argument.
+"""
+def default_dispatcher(task):
+    tasks = {
+        Task.START:log_start_info,
+        Task.TEST:log_test_info,
+        Task.STOP:stop,
+        Task.EXEC_ERR:log_exec_error,
+    }
+
+    assert isinstance(task, Task)
+    return tasks[task.type]
 
 
-class TestLogger(Singleton, OutputProvider):
-    """A logger class for storing data during testing."""
-
-    MINIMAL = 'minimal'
-    VERBOSE = 'verbose'
-    DEFAULT = 'default'
-
-    def _setup_instance(self):
-        self._output = self.DEFAULT
-        self._modules = []
-        self._errors = []
-        self._failed = []
-        self._testcases = 0
-        self._start_time = timeit.default_timer()
-        self.log(self.OUTPUT_WIDTH * '=')
-        self.log('Started testing...')
-        self.log(self.OUTPUT_WIDTH * '=')
-        
-        
-    def log(self, string):
-        print(string)
+output_mode = Output.DEFAULT
+out = sys.stdout
+use_colors = False
+width = 75
+running = False
+wait_period = 0.01
+dispatcher = default_dispatcher
 
 
-    @property
-    def tests_performed(self):
-        return self._testcases
+def run(queue):
+    global use_colors, running
+    if out.isatty():
+        use_colors = True
+
+    #redirect sys.stderr to NULL
+    sys.stderr = open(os.devnull, 'w') 
+
+    running = True
+    while running:
+        if queue.empty():
+            time.sleep(wait_period)
+            continue
+
+        task = queue.get()
+        logger_func = dispatcher(task)
+        logger_func(task.data)
 
 
-
-    @property
-    def modules_tested(self):
-        return len(self._modules)
-
-
-    @property
-    def all_passed(self):
-        return self.total_errors == 0 and self.total_fails == 0
-        
-        
-    @property
-    def total_errors(self):
-        return len(self._errors)
+def write_out(text, color=None):
+    if not use_colors or color is None:
+        out.write(text)
+        return
     
+    out.write(color)
+    out.write(text)
+    out.write(Colors.RESET)
+
+
+def write_separator(char, separation=1):
+    out.write((width // separation) * char)
+    out.write('\n')
+
+
+def write_traceback(exc):
+    exc_type = type(exc)
+    tb = exc.__traceback__
+    traceback_str = '\n'.join(traceback.format_exception(exc_type, exc, tb))
+    write_out(traceback_str)
+
+
+def log_start_info(data):
+    if output_mode == Output.MINIMAL:
+        return
     
-    @property
-    def total_fails(self):
-        return len(self._failed)
+    write_separator('=')
+    write_out('Started testing...\n')
+    write_separator('=')
 
 
-    @property
-    def output(self):
-        return self._output
+def log_test_info(data):
+    assert isinstance(data, TestCase)
+    if not data.success and output_mode != Output.MINIMAL:
+        write_out(f'Failed assertion:\n\n', Colors.FAILED_RED)
+        write_traceback(data.exception)
+        write_separator('-')
 
 
-    def verbose_output(self):
-        self._output = self.VERBOSE
-
-
-    def minimal_output(self):
-        self._output = self.MINIMAL
-        
-        
-    @property
-    def current_module(self):
-        module = None
-        if self._modules:
-            module = self._modules[-1]
-        return module
-
-
-    def add_test(self, func, exception):
-        error_type = None
-        if exception:
-            error_type = exception.__class__.__name__
-            self._failed.append(exception)
-        test = TestCase(func, error_type)
-        if self.current_module is not None:
-            self.current_module.add_test(test)
-        self._testcases += 1
-
-
-    def add_module(self, module_path):
-        module = TestModule(module_path)
-        self._modules.append(module)
-        
-        
-    def module_execution_error(self, exception):
-        self._errors.append(exception)
-        if self.current_module is not None:
-            self.current_module.error = exception
-            
-            
-    def log_results(self):
-        if self.output != self.MINIMAL:
-            for exception in self._errors:
-                self.log_error(exception)
-            for exception in self._failed:
-                self.log_fail(exception)
-        if self.output == self.VERBOSE:
-            for module in self._modules:
-                self.log(module.output)
-            self.log(self.OUTPUT_WIDTH * '=')
-        if self.modules_tested > 0:
-            time = round(timeit.default_timer()-self._start_time, 3)
-            self.log(f'Executed {self.modules_tested} modules in {time}s.')
-        self.log(f'Ran {self.tests_performed} tests.\n')
-        if self.all_passed:
-            self.log(Colors.color_ok('OK.\n'))
-        else:
-            self.log(str(self.total_fails) + ' ' + Colors.color_error('FAILED')) 
-            self.log(str(self.total_errors) + ' ' + Colors.color_error('ERRORS\n'))
-        
-        
-    def log_error(self, exception):
-        tb = exception.__traceback__
-        error_type = exception.__class__.__name__
-        self.log(Colors.color_error(f"ERROR type of <{error_type}> occured while executing a module.\n"))
-        for line in traceback.format_exception(error_type, exception, tb):
-            self.log(line)
-        self.log(self.OUTPUT_WIDTH * '=')
-        
+def log_exec_error(data):
+    assert isinstance(data, ModuleExecError)
+    exc = data.exception
+    exc_name = exc.__class__.__name__
     
-    def log_fail(self, exception):
-        tb = exception.__traceback__
-        error_type = exception.__class__.__name__
-        self.log(Colors.color_error(f"FAILED because of <{error_type}>\n"))
-        for line in traceback.format_exception(error_type, exception, tb):
-            self.log(line)
-        self.log(self.OUTPUT_WIDTH * '=')        
+    write_out(f'{exc_name} occured in module: {data.path}\n\n', Colors.FAILED_RED)
+    write_traceback(exc)
+    write_separator('-')
 
 
-    def __del__(self):
-        self.log_results()
+def log_module_info(module_dict):
+    assert isinstance(module_dict, dict)
+
+
+def stop(data):
+    global running
+    running = False
+    
+    assert isinstance(data, StopInfo)
+
+    if data.modules and output_mode == Output.VERBOSE:
+        self.log_module_info(data.modules)
+
+    if data.modules:
+        m = len(data.modules)
+        msg = f'Executed {m} modules.\n' if m != 1 else f'Executed 1 module.\n'
+        write_out(msg)
+
+    n = data.tests
+    t_delta = round(data.t_stop - data.t_start, 3)
+    msg = f'Ran {n} tests in ' if n != 1 else 'Ran 1 test in '
+    msg += f'{t_delta}s.\n\n'
+    write_out(msg)
+
+    errors = data.errors
+    if errors:
+        write_out(f'ERRORS: {errors}\n\n', Colors.FAILED_RED)
+        return
+
+    write_out('OK.\n\n', Colors.OK_GREEN)
+    
+    #close the devnull stream, redirect stderr back to default
+    sys.stderr.close()
+    sys.stderr = sys.__stderr__

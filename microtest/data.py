@@ -17,6 +17,12 @@ class TestCase:
 
 
 @dataclass
+class ModuleExecError:
+    path: str
+    exception: Exception
+
+
+@dataclass
 class StopInfo:
     errors: int
     tests: int
@@ -47,6 +53,7 @@ TEST -> A new testcase was executed.
         Data is an instance of TestCase.
 
 EXEC_ERR -> An exception during the execution of a module.
+            Data is an instance of ModuleExecError.
 """
 
 class Task:
@@ -54,6 +61,7 @@ class Task:
     START = 'start'
     STOP = 'stop'
     TEST = 'test'
+    EXEC_ERR = 'exec_err'
 
     def __init__(self, type_, data=None):
         self.type_ = type_

@@ -45,21 +45,21 @@ class Tests(unittest.TestCase):
 
 
     def test_scanner(self):
-        test_modules = scanner.find_tests(self.test_dir)
+        test_modules = scanner.find_tests(str(self.test_dir))
         
         for filename in self.test_files:
             filepath = self.test_dir.joinpath(filename)
-            self.assertTrue(filepath in test_modules)
+            self.assertTrue(str(filepath) in test_modules)
         for filename in self.other_files:
             filepath = self.test_dir.joinpath(filename)
-            self.assertTrue(filepath not in test_modules)
+            self.assertTrue(str(filepath) not in test_modules)
 
         for filename in self.test_files:
             filepath = self.subdir.joinpath(filename)
-            self.assertTrue(filepath in test_modules)
+            self.assertTrue(str(filepath) in test_modules)
         for filename in self.other_files:
             filepath = self.subdir.joinpath(filename)
-            self.assertTrue(filepath not in test_modules)
+            self.assertTrue(str(filepath) not in test_modules)
 
 
     def tearDown(self):

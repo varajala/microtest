@@ -1,15 +1,15 @@
 """
 Author: Valtteri Rajalainen
-Edited: 4.3.2021
+Edited: 3.5.2021
 """
 
-import sys
 import os
-import pathlib
 import runpy
+import threading
 
-from microtest.scanner import find_tests
-from microtest.logger import TestLogger
+import microtest.scanner as scanner
+import microtest.logger as logger
+import microtest.core as core
 
 
 EXEC_NAME = '__main__'
@@ -20,25 +20,37 @@ def run(root_path):
     Run the scanner from the given path
     and execute all found modules.
     """
-    modules_to_test = find_tests(root_path)
-    for module_path in modules_to_test:
-        execute_module(module_path)
+    path = os.path.abspath(root_path)
+    modules_to_test = (path,)
+    if os.path.isdir(path):
+        modules_to_test = scanner.find_tests(path)
+    _exec_modules(modules_to_test)
 
 
-def execute_module(path, exec_name=EXEC_NAME):
-    logger = TestLogger()
-    logger.add_module(path)
-    try:
-        runpy.run_path(path, run_name=exec_name)
-    except Exception as exc:
-        logger.module_execution_error(exc)
+def _exec_modules(modules):
+    logger_thread = threading.Thread(target=logger.run, args=(core.logger_queue,))
+    logger_thread.start()
 
+    core.start_testing()
+    
+    for module_path in modules:
+        try:
+            runpy.run_path(module_path, run_name=EXEC_NAME)
+        
+        except KeyboardInterrupt:
+            break
 
+        except SystemExit:
+            break
+
+        except Exception as exc:
+            core.register_module_exec_error(module_path, exc)
+
+    core.stop_testing()
+    logger_thread.join()
+
+"""
 def run_from_commandline():
-    """
-    Run the scanner and execute all found modules
-    with the commandline arguments.
-    """
     ARGUMENTS = {
     '-m':TestLogger().minimal_output,
     '--minimal':TestLogger().minimal_output,
@@ -56,4 +68,4 @@ def run_from_commandline():
             ARGUMENTS[arg]()
         if path.exists():
             run(path)
-            
+"""

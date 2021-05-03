@@ -1,20 +1,18 @@
 """
-Script for finding all tests in a directory and its children.
+BFS for the test modules from the given root path.
 
 Author: Valtteri Rajalainen
-Edited: 31.1.2021
+Edited: 3.5.2021
 """
 
 import os
-import pathlib
 import re
 
 
-def find_tests(root_path: pathlib.Path):
+def find_tests(root_path):
     """
     Find all test directories starting from root_path
-    and return a tuple of found modules. The path given
-    has to be pathlib.Path object.
+    and return a tuple of found modules.
     """
     modules = []
     dirs_to_scan = [root_path]
@@ -24,7 +22,7 @@ def find_tests(root_path: pathlib.Path):
             if entry.is_dir():
                 dirs_to_scan.append(entry.path)
             elif is_test_module(entry.name):
-                modules.append(pathlib.Path(entry.path))
+                modules.append(entry.path)
     return tuple(modules)
 
 

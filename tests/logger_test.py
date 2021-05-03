@@ -5,7 +5,7 @@ from queue import Queue
 from tempfile import TemporaryFile
 from threading import Thread
 
-import microtest.func_logger as logger
+import microtest.logger as logger
 from microtest.data import *
 
 
