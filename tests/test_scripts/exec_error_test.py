@@ -3,9 +3,21 @@ import microtest
 
 def run_tests():
     test_func1()
-    raise TypeError()
+    f()
     test_func2()
 
+
+def f():
+    g()
+
+def g():
+    h()
+
+def h():
+    j()
+
+def j():
+    raise RuntimeError()
 
 @microtest.test
 def test_func1():

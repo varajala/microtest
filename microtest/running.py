@@ -6,7 +6,6 @@ Edited: 3.5.2021
 import os
 import sys
 import runpy
-import threading
 
 import microtest.scanner as scanner
 import microtest.logger as logger
@@ -14,30 +13,10 @@ import microtest.core as core
 from microtest.data import *
 
 
-EXEC_NAME = '__main__'
-
-
-def run(root_path):
-    """
-    Run the scanner from the given path
-    and execute all found modules.
-    """
-    path = os.path.abspath(root_path)
-    modules = (path,)
-    if os.path.isdir(path):
-        modules = scanner.find_tests(path)
-        if not modules:
-            sys.stdout.write(f'No tests executed.\n')
-            return
-
-    logger_thread = threading.Thread(target=logger.run, args=(core.logger_queue,))
-    logger_thread.start()
-
-    core.start_testing()
-    
+def run(modules, on_error, exec_name='__main__'):
     for module_path in modules:
         try:
-            runpy.run_path(module_path, run_name=EXEC_NAME)
+            runpy.run_path(module_path, run_name=exec_name)
         
         except KeyboardInterrupt:
             break
@@ -46,19 +25,12 @@ def run(root_path):
             break
 
         except Exception as exc:
-            core.register_module_exec_error(module_path, exc)
-
-    core.stop_testing()
-    logger_thread.join()
-
-
-def verbose_output():
-    logger.output_mode = Output.VERBOSE
-
-def minimal_output():
-    logger.output_mode = Output.MINIMAL
+            exc_type = type(exc)
+            traceback = exc.__traceback__
+            on_error(exc_type, exc, traceback)
 
 
+'''
 def run_from_commandline(args):
     flags = {
         '-m':minimal_output,
@@ -83,4 +55,11 @@ def run_from_commandline(args):
             func = flags[arg]
             func()
 
-    run(path)
+    path = os.path.abspath(root_path)
+    modules = (path,)
+    if os.path.isdir(path):
+        modules = scanner.find_tests(path)
+        if not modules:
+            sys.stdout.write(f'No tests executed.\n')
+            return
+'''

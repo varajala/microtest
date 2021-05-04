@@ -1,166 +1,71 @@
 """
 Author: Valtteri Rajalainen
-Edited: 3.5.2021
+Edited: 4.5.2021
 """
 
-import time
 import sys
 import os
 import traceback
 
 from microtest.data import *
 
-
-"""
-Dispathcer is a callable object that takes the task as named argument
-and returns a callable depending on the task's type that takes
-the task.data object as named argument.
-"""
-def default_dispatcher(task):
-    tasks = {
-        Task.START:log_start_info,
-        Task.TEST:log_test_info,
-        Task.STOP:stop,
-        Task.EXEC_ERR:log_exec_error,
-        Task.LOG_INFO:log_info,
-    }
-
-    assert isinstance(task, Task)
-    return tasks[task.type]
-
-
-output_mode = Output.DEFAULT
-out = sys.stdout
-use_colors = False
-width = 75
-running = False
-wait_period = 0.01
-dispatcher = default_dispatcher
-
-
-def run(queue):
-    global use_colors, running
-    if out.isatty():
-        use_colors = True
-
-    #redirect sys.stderr to NULL
-    sys.stderr = open(os.devnull, 'w') 
-
-    running = True
-    while running:
-        if queue.empty():
-            time.sleep(wait_period)
-            continue
-
-        task = queue.get()
-        logger_func = dispatcher(task)
-        logger_func(task.data)
-
-
-def write_out(text, color=None):
-    if not use_colors or color is None:
-        out.write(text)
-        return
+class Logger:
     
-    out.write(color)
-    out.write(text)
-    out.write(Colors.RESET)
+    def __init__(self, output_mode=Output.DEFAULT, out=sys.stdout):
+        self.mode = output_mode
+        self.out = out
+        self.width = 75
+        if out.isatty():
+            self.use_colors = True
+        #redirect sys.stderr to NULL
+        #sys.stderr = open(os.devnull, 'w') 
 
 
-def write_separator(char, separation=1):
-    out.write((width // separation) * char)
-    out.write('\n')
+    def write_out(self, text, color=None):
+        if not self.use_colors or color is None:
+            self.out.write(text)
+            return
+        
+        self.out.write(color)
+        self.out.write(text)
+        self.out.write(Colors.RESET)
+        self.out.flush()
 
 
-def write_traceback(exc):
-    exc_type = type(exc)
-    tb = exc.__traceback__
-    traceback_str = '\n'.join(traceback.format_exception(exc_type, exc, tb))
-    write_out(traceback_str)
+    def write_separator(self, char, separation=1):
+        out.write((self.width // separation) * char)
+        out.write('\n')
 
 
-def log_start_info(data):
-    write_separator('=')
-    write_out('Started testing...\n')
-    write_separator('=')
+    def write_traceback(self, exc):
+        exc_type = type(exc)
+        tb = exc.__traceback__
+        traceback_lines = traceback.format_exception(exc_type, exc, tb)
+        for line in traceback_lines[5:]:
+            print(line)
 
 
-def log_test_info(data):
-    assert isinstance(data, TestCase)
-    if not data.success and output_mode != Output.MINIMAL:
-        exc_name = data.exception.__class__.__name__
-        write_out(f'{exc_name} occured:\n\n', Colors.FAILED_RED)
-        write_traceback(data.exception)
-        write_separator('-')
+    def log_test_info(self, func_name, result, exc):
+        self.write_out(func_name)
+        padding = self.width - len(func_name) - len(result)
+        self.write_out(' ' + padding * '.' + ' ')
+        color = Colors.OK_GREEN if result == Result.OK else Colors.FAILED_RED
+        self.write_out(result + '    \n', color)
 
 
-def log_info(data):
-    assert isinstance(data, str)
-    if output_mode != Output.MINIMAL:
-        write_out('  > ', Colors.INFO_CYAN)
-        write_out(data.strip() + '\n\n')
+    def log_module_exec_error(self, module_path, exc):
+        self.write_out(f'Execution failed: {exc.__class__.__name__}\n', Colors.FAILED_RED)
+        self.write_traceback(exc)
 
 
-def log_exec_error(data):
-    assert isinstance(data, ModuleExecError)
-    exc = data.exception
-    exc_name = exc.__class__.__name__
-    
-    if output_mode != Output.MINIMAL:
-        write_out(f'{exc_name} occured while executing  module:\n', Colors.FAILED_RED)
-        write_out(f'{data.path}\n\n')
-        write_traceback(exc)
-        write_separator('-')
+    def log_module_info(self, module_path):
+        self.write_out(module_path + '\n', Colors.INFO_CYAN)
 
 
-def log_module_info(module_dict):
-    assert isinstance(module_dict, dict)
-    for module, tests in module_dict.items():
-        write_out(module, Colors.INFO_CYAN)
-        write_out(':\n')
-        for test in tests:
-            write_out(test.func)
-            padding = width - len(test.func) - 7
-            write_out('' + padding * '.' + ' ')
-
-            msg = 'OK'
-            color = Colors.OK_GREEN
-            if not test.success:
-                msg = 'ERROR'
-                color = Colors.FAILED_RED
-            write_out(msg, color)
-            write_out('\n')
-        write_out('\n\n')
+    def terminate(self):
+        sys.stderr.close()
+        sys.stderr = sys.__stderr__
 
 
-def stop(data):
-    global running
-    running = False
-    
-    assert isinstance(data, StopInfo)
-
-    if data.modules and output_mode == Output.VERBOSE:
-        log_module_info(data.modules)
-        write_separator('-')
-
-    if data.modules:
-        m = len(data.modules)
-        msg = f'Executed {m} modules.\n' if m != 1 else f'Executed 1 module.\n'
-        write_out(msg)
-
-    n = data.tests
-    t_delta = round(data.t_stop - data.t_start, 3)
-    msg = f'Ran {n} tests in ' if n != 1 else 'Ran 1 test in '
-    msg += f'{t_delta}s.\n\n'
-    write_out(msg)
-
-    errors = data.errors
-    if errors:
-        write_out(f'ERRORS: {errors}\n\n', Colors.FAILED_RED)
-        return
-
-    write_out('OK.\n\n', Colors.OK_GREEN)
-    
-    #close the devnull stream, redirect stderr back to default
-    sys.stderr.close()
-    sys.stderr = sys.__stderr__
+    def __del__(self):
+        self.terminate()

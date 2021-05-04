@@ -25,8 +25,6 @@ def log(msg):
 def test(callable):
     """Make a single function part of the test suite."""
     module_path = os.path.abspath(inspect.getsourcefile(callable))
-    if not core.is_running():
-        running.run(module_path)
     
     def wrapper(*args, **kwargs):
         error = None

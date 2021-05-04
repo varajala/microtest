@@ -3,25 +3,20 @@ import timeit
 from typing import List, Dict
 from queue import Queue
 from microtest.data import *
+from microtest.logger import Logger
 
-modules: Dict[str, List[TestCase]] = dict()
+modules = dict()
 errors: int = 0
 tests: int = 0
 t_start: float = None
 t_end: float = None
 running = False
-
-logger_queue = Queue()
-
-def is_running():
-    return running
+logger = Logger()
 
 
 def start_testing():
     global t_start, running
 
-    task = Task(Task.START)
-    logger_queue.put(task)
     t_start = timeit.default_timer()
     running = True
 
@@ -29,15 +24,6 @@ def start_testing():
 def stop_testing():
     global t_start, t_stop
     t_stop = timeit.default_timer()
-    data = StopInfo(
-        errors,
-        tests,
-        t_start,
-        t_stop,
-        modules.copy()
-    )
-    task = Task(Task.STOP, data)
-    logger_queue.put(task)
     running = False
     
 
@@ -49,18 +35,19 @@ def register_test(module_path, func, exc):
         errors += 1
 
     if module_path not in modules:
+        logger.log_module_info(module_path)
         modules[module_path] = list()
 
-    test_obj = TestCase(func.__qualname__, exc is None, exc)
-    modules[module_path].append(test_obj)
-    
-    task = Task(Task.TEST, test_obj)
-    logger_queue.put(task)
+    func_name = func.__qualname__
+    result = Result.OK
+    if exc is not None:
+        exc_name = exc.__class__.__name__
+        result = Result.FAILED if exc_name == 'AssertionError' else Result.ERROR
+    modules[module_path].append((func_name, result, exc))
+    logger.log_test_info(func_name, result, exc)
 
 
 def register_module_exec_error(module_path, exc):
     global errors
     errors += 1
-    data = ModuleExecError(module_path, exc)
-    task = Task(Task.EXEC_ERR, data)
-    logger_queue.put(task)
+    logger.log_module_exec_error(module_path, exc)
