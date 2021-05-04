@@ -7,19 +7,9 @@ Edited: 3.5.2021
 import os
 import inspect
 import microtest.core as core
-import microtest.running as running
-from microtest.data import *
 
 
-__all__ = ['log', 'test', 'Fixture', ]
-
-
-def log(msg):
-    message = msg
-    if not isinstance(msg, str):
-        message = str(msg)
-    task = Task(Task.LOG_INFO, message)
-    core.logger_queue.put(task)
+__all__ = ['test', 'Fixture', ]
 
 
 def test(callable):

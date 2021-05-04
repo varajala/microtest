@@ -14,7 +14,8 @@ def test_func1():
 
 @microtest.test
 def test_func2():
-    assert 10 < 0
+    x = 1
+    assert 10 < x, (10, x)
 
 
 @microtest.test

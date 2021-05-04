@@ -30,7 +30,7 @@ def func3():
 
 @microtest.test
 def assertion():
-    microtest.log(str(calls))
+    print(calls)
     assert calls == ['setup', 'func1', 'func2', 'cleanup']
 
 

@@ -17,7 +17,8 @@ def h():
     j()
 
 def j():
-    raise RuntimeError()
+    #info = 'Here is info on the exception...'
+    rai#se RuntimeError(info)
 
 @microtest.test
 def test_func1():

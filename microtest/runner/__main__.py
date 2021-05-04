@@ -30,7 +30,7 @@ def main(args):
     run(modules, print_exc)
 
 
-def print_exc(exc_type, exc, tb):
+def print_exc(module_path, exc_type, exc, tb):
     traceback.print_exception(exc_type, exc, tb)
 
 
