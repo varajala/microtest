@@ -66,7 +66,9 @@ class Logger:
             tb = exc.__traceback__
             exc_type = type(exc)
             tb_lines = traceback.format_exception(exc_type, exc, tb)
-            self.write_out('-> ' + tb_lines[-1], Colors.FAILED_RED)
+            self.write_separator('-')
+            self.write_out(''.join(tb_lines), Colors.FAILED_RED)
+            self.write_separator('-')
 
 
     def log_module_exec_error(self, module_path, exc_type, exc, tb):
@@ -106,7 +108,7 @@ def assertion_introspect(tb_line):
     ln = re.search(ln_exp, tb_line)[0]
 
     assertion = ''
-    assert_exp = re.compile(r'(?<=assert )[^\n,]+')
+    assert_exp = re.compile(r'(?<=assert )[^\n]+')
     match = re.search(assert_exp, tb_line)
     if match:
         assertion = match[0]
