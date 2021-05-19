@@ -36,8 +36,13 @@ class Logger:
         self.out.write('\n')
 
 
-    def write_tb(self, exc):
-        pass
+    def log_traceback(self, exc):
+        tb = exc.__traceback__
+        exc_type = type(exc)
+        tb_lines = traceback.format_exception(exc_type, exc, tb)
+        self.write_out('\n')
+        self.write_out(''.join(tb_lines), Colors.FAILED_RED)
+        self.write_out('\n')
 
 
     def log_start_info(self):
@@ -63,17 +68,11 @@ class Logger:
             return
 
         if result == Result.ERROR:
-            tb = exc.__traceback__
-            exc_type = type(exc)
-            tb_lines = traceback.format_exception(exc_type, exc, tb)
-            self.write_separator('-')
-            self.write_out(''.join(tb_lines), Colors.FAILED_RED)
-            self.write_separator('-')
+            self.log_traceback(exc)
 
 
     def log_module_exec_error(self, module_path, exc_type, exc, tb):
-        tb_lines = traceback.format_exception(exc_type, exc, tb)
-        self.write_out(tb_lines[-1], Colors.FAILED_RED)
+        self.log_traceback(exc)
 
 
     def log_module_info(self, module_path):

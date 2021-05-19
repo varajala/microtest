@@ -7,6 +7,7 @@ Edited: 3.5.2021
 
 import sys
 import os
+import traceback
 import microtest.runner as runner
 import microtest.scanner as scanner
 import microtest.core as core
@@ -27,7 +28,7 @@ def main(args):
    
    if os.path.isfile(path):
       core.logger.log_start_info()
-      runner.run((path,), print_exc)
+      runner.run((path,), lambda path, e, et, tb: traceback.print_exception(e, et, tb))
       return
 
    modules = scanner.find_tests(path)
