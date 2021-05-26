@@ -48,7 +48,7 @@ def run_from_commandline(args):
 
 
 def find_and_exec(path):
-    modules = scanner.find_tests(path)
+    modules = scanner.find_tests(os.path.abspath(path))
     if not modules:
         sys.stdout.write(f'No modules found.\n')
         return

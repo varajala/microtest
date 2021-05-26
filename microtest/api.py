@@ -2,7 +2,7 @@
 Main decorators that define the API for the test tools.
 
 Author: Valtteri Rajalainen
-Edited: 3.5.2021
+Edited: 26.5.2021
 """
 import os
 import inspect
@@ -10,7 +10,11 @@ import traceback as tb_module
 import microtest.core as core
 
 
-__all__ = ['test', 'raises', 'Fixture', ]
+__all__ = [
+    'test',
+    'raises',
+    'Fixture',
+    ]
 
 
 def test(callable):
@@ -30,9 +34,7 @@ def test(callable):
     return wrapper
 
 
-
 class Error:
-    
     def __init__(self, exc_type, exc, tb):
         self.exc_type = exc_type
         self.exc = exc
@@ -65,25 +67,20 @@ def raises(callable, args, exc_type):
 
 
 class Fixture:
-
     def __init__(self):
         self.__setup = None
         self.__cleanup = None
 
-
     def setup(self, func):
         self.__setup = func
 
-
     def cleanup(self, func):
         self.__cleanup = func
-
 
     def __enter__(self):
         if self.__setup:
             self.__setup()
         return self
-
 
     def __exit__(self, exc_type, exc, exc_tb):
         self.__cleanup()
