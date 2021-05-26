@@ -13,6 +13,7 @@ import microtest.core as core
 __all__ = [
     'test',
     'raises',
+    'patch',
     'Fixture',
     ]
 
@@ -64,6 +65,52 @@ def raises(callable, args, exc_type):
     else:
         info = 'No errors raised.'
         raise AssertionError(info)
+
+
+class Patch:
+    def __init__(self, obj, attr, new):
+        object.__setattr__(self, 'in_context', False)
+        self.obj = obj
+        self.attr = attr
+        self.old = getattr(obj, attr)
+        self.new = new
+
+    def __setattr__(self, attr, value):
+        in_context = object.__getattribute__(self, 'in_context')
+        if not in_context:
+            object.__setattr__(self, attr, value)
+            return
+        
+        new = object.__getattribute__(self, 'new')
+        obj = object.__getattribute__(self, 'obj')
+        if hasattr(new, attr):
+            object.__setattr__(new, attr, value)
+            return
+        object.__setattr__(obj, attr, value)
+
+    def __getattribute__(self, attr):
+        in_context = object.__getattribute__(self, 'in_context')
+        if not in_context:
+            return object.__getattribute__(self, attr)
+        
+        new = object.__getattribute__(self, 'new')
+        obj = object.__getattribute__(self, 'obj')
+        if hasattr(new, attr):
+            return object.__getattribute__(new, attr)
+        return object.__getattribute__(obj, attr)
+
+    def __enter__(self):
+        setattr(self.obj, self.attr, self.new)
+        self.in_context = True
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        object.__setattr__(self, 'in_context', False)
+        setattr(self.obj, self.attr, self.old)
+
+
+def patch(obj, attr, new):
+    return Patch(obj, attr, new)
 
 
 class Fixture:
