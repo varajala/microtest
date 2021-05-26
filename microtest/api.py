@@ -6,10 +6,11 @@ Edited: 3.5.2021
 """
 import os
 import inspect
+import traceback as tb_module
 import microtest.core as core
 
 
-__all__ = ['test', 'Fixture', ]
+__all__ = ['test', 'raises', 'Fixture', ]
 
 
 def test(callable):
@@ -27,6 +28,40 @@ def test(callable):
         finally:
             core.register_test(module_path, callable, error)
     return wrapper
+
+
+
+class Error:
+    
+    def __init__(self, exc_type, exc, tb):
+        self.exc_type = exc_type
+        self.exc = exc
+        self.tb = tb
+
+    @property
+    def traceback(self):
+        exc_info = (self.exc_type, self.exc, self.tb)
+        return ''.join(tb_module.format_exception(*exc_info))
+
+
+def raises(callable, args, exc_type):
+    if not inspect.isclass(exc_type):
+        raise TypeError('Argument exc_type was not a class.')
+    
+    try:
+        callable(*args)
+    
+    except exc_type as err:
+        return Error(exc_type, err, err.__traceback__)
+
+    except Exception as err:
+        info = f'Expected an exception with type: {exc_type.__name__}. '
+        info += f'{err.__class__.__name__} was raised instead.'
+        raise AssertionError(info)
+
+    else:
+        info = 'No errors raised.'
+        raise AssertionError(info)
 
 
 class Fixture:
