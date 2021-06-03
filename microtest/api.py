@@ -119,10 +119,14 @@ class Fixture:
         self.cleanup = cleanup
         self.reset = reset
 
-    def run(self, testcases):
+    def run(self, testcases, **kwargs):
         for testcase in testcases:
             try:
-                testcase()
+                if kwargs:
+                    testcase(**kwargs)
+                else:
+                    testcase()
+            
             finally:
                 if self.reset:
                     self.reset()        
