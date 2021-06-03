@@ -114,20 +114,24 @@ def patch(obj, attr, new):
 
 
 class Fixture:
-    def __init__(self):
-        self.__setup = None
-        self.__cleanup = None
+    def __init__(self, *, setup=None, reset=None, cleanup=None):
+        self.setup = setup
+        self.cleanup = cleanup
+        self.reset = reset
 
-    def setup(self, func):
-        self.__setup = func
-
-    def cleanup(self, func):
-        self.__cleanup = func
+    def run(self, testcases):
+        for testcase in testcases:
+            try:
+                testcase()
+            finally:
+                if self.reset:
+                    self.reset()        
 
     def __enter__(self):
-        if self.__setup:
-            self.__setup()
+        if self.setup:
+            self.setup()
         return self
 
     def __exit__(self, exc_type, exc, exc_tb):
-        self.__cleanup()
+        if self.cleanup:
+            return self.cleanup()

@@ -1,18 +1,31 @@
 import microtest
 
 
-fixture = microtest.Fixture()
 calls = []
 
+def run_tests():
+    fixture = microtest.Fixture()
+    fixture.setup = setup_func
+    fixture.reset = reset_func
+    fixture.cleanup = cleanup_func
 
-@fixture.setup
+    tests = [func1, func2, func3]
+    with fixture:
+        fixture.run(tests)
+
+
 def setup_func():
     calls.append('setup')
 
 
-@fixture.cleanup
+def reset_func():
+    calls.append('reset')
+
+
 def cleanup_func():
     calls.append('cleanup')
+    assert calls == ['setup', 'func1', 'reset', 'func2', 'reset', 'func3', 'reset', 'cleanup']
+    return True
 
 
 def func1():
@@ -24,25 +37,9 @@ def func2():
 
 
 def func3():
-    raise RuntimeError()
     calls.append('func3')
-
-
-@microtest.test
-def assertion():
-    print(calls)
-    assert calls == ['setup', 'func1', 'func2', 'cleanup']
-
-
-def main():
-    try:
-        with fixture:
-            func1()
-            func2()
-            func3()
-    except:
-        assertion()
+    raise RuntimeError()
 
 
 if __name__ == '__main__':
-    main()
+    run_tests()
