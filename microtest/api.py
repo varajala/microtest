@@ -139,3 +139,17 @@ class Fixture:
     def __exit__(self, exc_type, exc, exc_tb):
         if self.cleanup:
             return self.cleanup()
+
+
+class PatchObject:
+
+    def __init__(self, items):
+        object.__setattr__(self, '__items__', items)
+
+    def __setattr__(self, attr, value):
+        items = object.__getattribute__(self, '__items__')
+        items[attr] = value
+
+    def __getattribute__(self, attr):
+        items = object.__getattribute__(self, '__items__')
+        return items.get(attr, None)
