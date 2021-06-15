@@ -15,6 +15,7 @@ __all__ = [
     'raises',
     'patch',
     'Fixture',
+    'PatchObject',
     ]
 
 
