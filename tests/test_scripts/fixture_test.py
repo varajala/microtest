@@ -43,3 +43,7 @@ def func3():
     calls.append('func3')
     print(calls)
     raise RuntimeError()
+
+
+if __name__ == '__main__':
+    fixture.run()

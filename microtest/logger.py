@@ -9,8 +9,10 @@ import traceback
 import re
 
 from microtest.data import *
+from microtest.core import Logger
 
-class Logger:
+
+class DefaultLogger(Logger):
     
     def __init__(self, output_mode=Output.DEFAULT, out=sys.stdout):
         self.mode = output_mode

@@ -4,7 +4,7 @@ import runpy
 execute = lambda module: list() 
 
 
-def run(modules, on_error, notify_module=None, exec_name='__main__'):
+def run(modules, on_error, notify_module=None, exec_name='microtest_runner'):
     for module_path in modules:
         if notify_module:
             notify_module(module_path)

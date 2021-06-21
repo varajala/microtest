@@ -22,3 +22,22 @@ class Result:
     OK = 'OK'
     FAILED = 'FAILED'
     ERROR = 'ERROR'
+
+
+
+class Namespace:
+    def __init__(self):
+        object.__setattr__(self, 'data', dict())
+
+    def __getattribute__(self, attr):
+        data = object.__getattribute__(self, 'data')
+        if attr not in self:
+            raise AttributeError(f'No memeber "{attr}" in namespace')
+        return data[attr]
+
+    def __setattr__(self, attr, value):
+        object.__getattribute__(self, 'data').__setitem__(attr, value)
+
+    def __contains__(self, item):
+        data = object.__getattribute__(self, 'data')
+        return item in data.keys()

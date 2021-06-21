@@ -11,29 +11,14 @@ import microtest.runner as runner
 import microtest.scanner as scanner
 import microtest.core as core
 
+from microtest.data import *
 from microtest.api import *
 from microtest.api import TestCase
+from microtest.logger import DefaultLogger
 
 
-class __Context:
-    def __init__(self):
-        object.__setattr__(self, 'data', dict())
-
-    def __getattribute__(self, attr):
-        data = object.__getattribute__(self, 'data')
-        if attr not in self:
-            raise AttributeError(f'No memeber "{attr}" in context')
-        return data[attr]
-
-    def __setattr__(self, attr, value):
-        object.__getattribute__(self, 'data').__setitem__(attr, value)
-
-    def __contains__(self, item):
-        data = object.__getattribute__(self, 'data')
-        return item in data.keys()
-
-
-context = __Context()
+context = Namespace()
+core.logger = DefaultLogger()
 
 
 def filter_tests(namespace):
@@ -60,7 +45,6 @@ def run_from_commandline(args):
 
     if os.path.isfile(path):
         runner.execute = filter_tests
-        core.logger.log_start_info()
         runner.run((path,), lambda path, e, et, tb: traceback.print_exception(e, et, tb))
         return
 
@@ -74,6 +58,4 @@ def find_and_exec(path):
         return
 
     runner.execute = filter_tests
-
-    core.logger.log_start_info()
     runner.run(modules, core.register_module_exec_error, core.register_module)
