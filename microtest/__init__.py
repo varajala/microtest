@@ -6,10 +6,13 @@ Edited: 26.5.2021
 import os
 import sys
 import traceback
+
 import microtest.runner as runner
 import microtest.scanner as scanner
 import microtest.core as core
+
 from microtest.api import *
+from microtest.api import TestCase
 
 
 class __Context:
@@ -33,6 +36,15 @@ class __Context:
 context = __Context()
 
 
+def filter_tests(namespace):
+    tests = [ item for item in namespace.values() if isinstance(item, TestCase) ]
+    for obj in namespace.values():
+        if isinstance(obj, Fixture):
+            obj.testcases = tests
+            return obj
+    return tests
+
+
 def run_from_commandline(args):
     #handle flags etc...
     cwd = os.getcwd()
@@ -46,6 +58,8 @@ def run_from_commandline(args):
         if not os.path.isabs(path):
             path = os.path.join(cwd, path)
     
+    runner.execute = filter_tests
+
     if os.path.isfile(path):
         core.logger.log_start_info()
         runner.run((path,), lambda path, e, et, tb: traceback.print_exception(e, et, tb))

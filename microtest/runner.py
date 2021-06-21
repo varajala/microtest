@@ -1,7 +1,7 @@
-"""
-Runner submodule.
-"""
 import runpy
+
+
+execute = lambda module: module.items()
 
 
 def run(modules, on_error, notify_module=None, exec_name='__main__'):
@@ -10,7 +10,10 @@ def run(modules, on_error, notify_module=None, exec_name='__main__'):
             notify_module(module_path)
         
         try:
-            runpy.run_path(module_path, run_name=exec_name)
+            module = runpy.run_path(module_path, run_name=exec_name)
+            for callable in execute(module):
+                callable()
+            
         
         except KeyboardInterrupt:
             break

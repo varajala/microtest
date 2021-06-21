@@ -19,21 +19,30 @@ __all__ = [
     ]
 
 
-def test(callable):
-    """Make a single function part of the test suite."""
-    module_path = os.path.abspath(inspect.getsourcefile(callable))
-    
-    def wrapper(*args, **kwargs):
+class TestCase:
+    def __init__(self, func, module_path):
+        self.func = func
+        self.module_path = module_path
+        self.catch_errors = True
+
+    def __call__(self, *args, **kwargs):
         error = None
         try:
-            callable(*args, **kwargs)
+            self.func(*args, **kwargs)
         
         except Exception as exc:
+            if not self.catch_errors:
+                raise exc
             error = exc
         
         finally:
-            core.register_test(module_path, callable, error)
-    return wrapper
+            core.register_test(self.module_path, self.func, error)
+
+
+def test(func):
+    """Make a single function part of the test suite."""
+    module_path = os.path.abspath(inspect.getsourcefile(func))
+    return TestCase(func, module_path)
 
 
 class Error:
@@ -115,31 +124,75 @@ def patch(obj, attr, new):
 
 
 class Fixture:
-    def __init__(self, *, setup=None, reset=None, cleanup=None):
-        self.setup = setup
-        self.cleanup = cleanup
-        self.reset = reset
 
-    def run(self, testcases, **kwargs):
-        for testcase in testcases:
-            try:
-                if kwargs:
-                    testcase(**kwargs)
-                else:
-                    testcase()
+    class Iterator:
+
+        def __init__(self, fixture):
+            self.fixture = fixture
+
+
+        def wrap(self, func):
+            fixture = self.fixture
+            if isinstance(func, TestCase):
+                func.catch_errors = False
             
-            finally:
-                if self.reset:
-                    self.reset()        
+            def wrapper(*args, **kwargs):
+                try:
+                    if fixture._reset:
+                        fixture._reset()
+                    func(*args, **kwargs)
+                
+                except Exception as exc:
+                    suppress_exc = False
+                    fixture.error = True
+                    if fixture._cleanup:
+                        suppress_exc = fixture._cleanup()
+                    
+                    if not suppress_exc:
+                        raise exc
+            
+            return wrapper
 
-    def __enter__(self):
-        if self.setup:
-            self.setup()
-        return self
 
-    def __exit__(self, exc_type, exc, exc_tb):
-        if self.cleanup:
-            return self.cleanup()
+        def __next__(self):
+            fixture = self.fixture
+            if not fixture.setup_done:
+                if fixture._setup:
+                    fixture._setup()
+                fixture.setup_done = True
+            
+            if fixture.testcases:
+                func = fixture.testcases.pop(0)
+                return self.wrap(func)
+            
+            if fixture._cleanup and not fixture.error:
+                fixture._cleanup()
+            raise StopIteration
+
+
+    def __init__(self):
+        self.setup_done = False
+        self.testcases = list()
+        self.error = None
+        self._setup = None
+        self._cleanup = None
+        self._reset = None
+
+    def setup(self, func):
+        self._setup = func
+        return func
+
+    def cleanup(self, func):
+        self._cleanup = func
+        return func
+
+    def reset(self, func):
+        self._reset = func
+        return func
+
+    def __iter__(self):
+        return Fixture.Iterator(self)
+
 
 
 class PatchObject:

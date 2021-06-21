@@ -21,7 +21,3 @@ def test_func2():
 @microtest.test
 def test_func3():
     raise TypeError
-
-
-if __name__ == '__main__':
-    run_tests()
