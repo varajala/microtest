@@ -17,10 +17,17 @@ class __Context:
         object.__setattr__(self, 'data', dict())
 
     def __getattribute__(self, attr):
-        return object.__getattribute__(self, 'data').get(attr, None)
+        data = object.__getattribute__(self, 'data')
+        if attr not in self:
+            raise AttributeError(f'No memeber "{attr}" in context')
+        return data[attr]
 
     def __setattr__(self, attr, value):
         object.__getattribute__(self, 'data').__setitem__(attr, value)
+
+    def __contains__(self, item):
+        data = object.__getattribute__(self, 'data')
+        return item in data.keys()
 
 
 context = __Context()
