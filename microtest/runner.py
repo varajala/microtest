@@ -1,7 +1,7 @@
 import runpy
 
 
-execute = lambda module: module.items()
+execute = lambda module: list() 
 
 
 def run(modules, on_error, notify_module=None, exec_name='__main__'):
@@ -11,8 +11,8 @@ def run(modules, on_error, notify_module=None, exec_name='__main__'):
         
         try:
             module = runpy.run_path(module_path, run_name=exec_name)
-            for callable in execute(module):
-                callable()
+            for test in execute(module):
+                test()
             
         
         except KeyboardInterrupt:

@@ -57,10 +57,9 @@ def run_from_commandline(args):
         
         if not os.path.isabs(path):
             path = os.path.join(cwd, path)
-    
-    runner.execute = filter_tests
 
     if os.path.isfile(path):
+        runner.execute = filter_tests
         core.logger.log_start_info()
         runner.run((path,), lambda path, e, et, tb: traceback.print_exception(e, et, tb))
         return
@@ -73,6 +72,8 @@ def find_and_exec(path):
     if not modules:
         sys.stdout.write(f'No modules found.\n')
         return
-    
+
+    runner.execute = filter_tests
+
     core.logger.log_start_info()
     runner.run(modules, core.register_module_exec_error, core.register_module)
