@@ -23,7 +23,7 @@ def find_tests(root_path):
                 dirs_to_scan.append(entry.path)
             elif is_test_module(entry.name):
                 modules.append(entry.path)
-    return tuple(modules)
+    return modules
 
 
 def scan_directory_safely(path):

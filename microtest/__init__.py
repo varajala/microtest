@@ -7,33 +7,23 @@ import os
 import sys
 import traceback
 
-import microtest.runner as runner
 import microtest.scanner as scanner
 import microtest.core as core
 
 from microtest.data import *
 from microtest.api import *
-from microtest.api import TestCase
 from microtest.logger import DefaultLogger
 
 
 context = Namespace()
 core.logger = DefaultLogger()
 
-
-def filter_tests(namespace):
-    tests = [ item for item in namespace.values() if isinstance(item, TestCase) ]
-    for obj in namespace.values():
-        if isinstance(obj, Fixture):
-            obj.testcases = tests
-            return obj
-    return tests
+ENTRYPOINT = 'main.py'
 
 
 def run_from_commandline(args):
     #handle flags etc...
-    cwd = os.getcwd()
-    path = cwd
+    path = cwd = os.getcwd()
     if args:
         path = args.pop(-1)
         if not os.path.exists(path):
@@ -43,19 +33,21 @@ def run_from_commandline(args):
         if not os.path.isabs(path):
             path = os.path.join(cwd, path)
 
+    path = os.path.abspath(path)
     if os.path.isfile(path):
-        runner.execute = filter_tests
-        runner.run((path,), lambda path, e, et, tb: traceback.print_exception(e, et, tb))
+        core.run_modules((path,))
         return
 
-    find_and_exec(path)
-
-
-def find_and_exec(path):
-    modules = scanner.find_tests(os.path.abspath(path))
+    modules = scanner.find_tests(path)
     if not modules:
         sys.stdout.write(f'No modules found.\n')
         return
 
-    runner.execute = filter_tests
-    runner.run(modules, core.register_module_exec_error, core.register_module)
+    if ENTRYPOINT in os.listdir(path):
+        modules.insert(0, os.path.join(path, ENTRYPOINT))
+
+    core.run_modules(modules)
+
+
+def run():
+    core.run()

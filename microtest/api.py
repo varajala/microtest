@@ -7,6 +7,7 @@ Edited: 26.5.2021
 import os
 import inspect
 import traceback as tb_module
+
 import microtest.core as core
 
 
@@ -14,22 +15,33 @@ __all__ = [
     'test',
     'raises',
     'patch',
+    'resource',
+    'utility',
+    'add_resource',
     'create_fixture',
+    'on_exit',
     'Fixture',
     'PatchObject',
     ]
 
 
-class TestCase:
+def generate_signature(func):
+    signature = inspect.signature(func)
+    return [ param for param in signature.parameters ]
+
+
+class TestCase(core._TestObject):
+
     def __init__(self, module_path, func):
         self.func = func
+        self.signature = generate_signature(func)
         self.module_path = module_path
         self.catch_errors = True
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, **kwargs):
         error = None
         try:
-            self.func(*args, **kwargs)
+            self.func(**kwargs)
         
         except Exception as exc:
             if not self.catch_errors:
@@ -40,12 +52,103 @@ class TestCase:
             core.register_test_results(self.module_path, self.func, error)
 
 
+class Fixture(core._FixtureObject):
+
+    def __init__(self, *, reset = None, setup = None, cleanup = None):
+        self.setup_done = False
+        self.testcases = list()
+        self.error = None
+        self._setup = setup
+        self._cleanup = cleanup
+        self._reset = reset
+
+
+    def append(self, test):
+        self.testcases.append(test)
+
+
+    def setup(self, func):
+        self._setup = func
+        return func
+
+
+    def cleanup(self, func):
+        self._cleanup = func
+        return func
+
+
+    def reset(self, func):
+        self._reset = func
+        return func
+
+
+    def __iter__(self):
+        return FixtureIterator(self)
+
+
+class TestCaseWrapper:
+    def __init__(self, fixture, testcase):
+        self.fixture = fixture
+        self.testcase = testcase
+        self.signature = testcase.signature
+
+    def __call__(self, **kwargs):
+        fixture = self.fixture
+        testcase = self.testcase
+        testcase.catch_errors = False
+        try:
+            if fixture._reset:
+                fixture._reset()
+            testcase(**kwargs)
+        
+        except Exception as exc:
+            suppress_exc = False
+            fixture.error = exc
+            if fixture._cleanup:
+                suppress_exc = fixture._cleanup()
+            
+            if not suppress_exc:
+                raise exc
+
+
+class FixtureIterator:
+
+    def __init__(self, fixture):
+        self.fixture = fixture
+
+    def __next__(self):
+        fixture = self.fixture
+        if not fixture.setup_done:
+            if fixture._setup:
+                fixture._setup()
+            fixture.setup_done = True
+        
+        if fixture.testcases:
+            testcase = fixture.testcases.pop(0)
+            return TestCaseWrapper(self.fixture, testcase)
+        
+        if fixture._cleanup and not fixture.error:
+            fixture._cleanup()
+        raise StopIteration
+
+
+
 def test(func):
     """Make a single function part of the test suite."""
     module_path = os.path.abspath(inspect.getsourcefile(func))
     testcase = TestCase(module_path, func)
     core.collect_test(module_path, testcase)
     return testcase
+
+
+def create_fixture(func):
+    globals_ = func.__globals__
+    obj = core.call_with_resources(func, generate_signature(func))
+    if not isinstance(obj, Fixture):
+        ifno = '@create_fixture excpects a callable that retruns a Fixture object'
+        raise ValueError(info)
+    
+    globals_['fixture'] = obj
 
 
 class Error:
@@ -126,109 +229,6 @@ def patch(obj, attr, new):
     return Patch(obj, attr, new)
 
 
-class Fixture:
-
-    def __init__(self, *, reset = None, setup = None, cleanup = None):
-        self.setup_done = False
-        self.testcases = list()
-        self.kwargs = dict()
-        self.error = None
-        self._setup = setup
-        self._cleanup = cleanup
-        self._reset = reset
-
-
-    def setup(self, func):
-        self._setup = func
-        return func
-
-
-    def cleanup(self, func):
-        self._cleanup = func
-        return func
-
-
-    def reset(self, func):
-        self._reset = func
-        return func
-
-
-    def params(self, **kwargs):
-        self.kwargs = kwargs
-
-
-    def run(self, **kwargs):
-        if kwargs:
-            self.kwargs = kwargs
-
-        self.testcases = [ test.obj for test in core.list_tests() if not test.executed ]
-        for test in self:
-            test()
-
-
-    def __iter__(self):
-        return FixtureIterator(self)
-
-
-class FixtureIterator:
-
-    def __init__(self, fixture):
-        self.fixture = fixture
-
-
-    def wrap(self, func):
-        fixture = self.fixture
-        if isinstance(func, TestCase):
-            func.catch_errors = False
-        
-        def wrapper():
-            try:
-                if fixture._reset:
-                    fixture._reset()
-                
-                if fixture.kwargs:
-                    func(**fixture.kwargs)
-                else:
-                    func()
-            
-            except Exception as exc:
-                suppress_exc = False
-                fixture.error = exc
-                if fixture._cleanup:
-                    suppress_exc = fixture._cleanup()
-                
-                if not suppress_exc:
-                    raise exc
-        return wrapper
-
-
-    def __next__(self):
-        fixture = self.fixture
-        if not fixture.setup_done:
-            if fixture._setup:
-                fixture._setup()
-            fixture.setup_done = True
-        
-        if fixture.testcases:
-            func = fixture.testcases.pop(0)
-            return self.wrap(func)
-        
-        if fixture._cleanup and not fixture.error:
-            fixture._cleanup()
-        raise StopIteration
-
-
-def create_fixture(func):
-    globals_ = func.__globals__
-    obj = func()
-    if not isinstance(obj, Fixture):
-        ifno = '@create_fixture excpects a callable that retruns a Fixture object'
-        raise ValueError(info)
-    
-    globals_['fixture'] = obj
-
-
-
 class PatchObject:
 
     def __init__(self, items):
@@ -240,4 +240,29 @@ class PatchObject:
 
     def __getattribute__(self, attr):
         items = object.__getattribute__(self, '__items__')
-        return items.get(attr, None)
+        if attr not in self:
+            raise AttributeError(f'No such attribute "{attr}"')
+        return items[attr]
+
+    def __contains__(self, item):
+        items = object.__getattribute__(self, '__items__')
+        return item in items.keys()
+
+
+def resource(func):
+    obj = core.call_with_resources(func, generate_signature(func))
+    core.add_resource(func.__name__, obj)
+
+
+def utility(obj, *, name=None):
+    if name is None:
+        name = obj.__name__
+    core.add_utility(name, obj)
+
+
+def add_resource(name, obj):
+    core.add_resource(name, obj)
+
+
+def on_exit(func):
+    core.on_exit(func)

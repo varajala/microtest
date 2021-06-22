@@ -24,6 +24,12 @@ class Result:
     ERROR = 'ERROR'
 
 
+@dataclass
+class Module:
+    path: str
+    tests = dict()
+
+
 
 class Namespace:
     def __init__(self):
@@ -41,3 +47,15 @@ class Namespace:
     def __contains__(self, item):
         data = object.__getattribute__(self, 'data')
         return item in data.keys()
+
+
+class ExecutionContext:
+    def __init__(self):
+        self.on_exit = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self.on_exit:
+            return self.on_exit(exc_type, exc, tb)
