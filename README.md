@@ -7,6 +7,8 @@ Simple but powerful testing utilities for Python.
 - [Basic Use](#basic-use)
 - [Discovering tests](#discovering-tests)
 - [Fixtures](#fixtures)
+- [Resources](#resources)
+- [Utilites](#utilities)
 - [Config](#config)
 
 ## Installation
@@ -131,5 +133,81 @@ def test_user_creation():
 The example code above is an imaginary test scenario using sqlite3 database with a temporary file. Because the fixture is in the module namespace, microtest will perform the *setup*-function before any testcases. This creates a temporary file, which can be used to create temporary database. The *reset*-function will be called before each testcase. This will delete all rows from the table *users*, so the tests don't have an effect on each other. The *cleanup*-function will be called after all tests are executed, or if any exceptions occur. Here the temporary file is removed.
 
 In microtest Fixtures are scoped to the module. You should not try to use same Fixture object for multiple modules. One module should have only one Fixture.
+
+
+## Resources
+
+Microtest provides a way to share pyhton objects across tests without any external assistance (like importing other modules). Resources are very similiar to fixtures in [pytest](https://github.com/pytest-dev/pytest). You simply create a function that returns some data and use the function's name as an argument in the test function that requires that resource. Microtest will automatically pass that resource to the test function. Here is an example:
+
+```python
+import random
+import microtest
+
+
+@microtest.resource
+def random_integers():
+    return [ random.randint(0, 100) for _ in range(10) ]
+
+
+@microtest.test
+def test_sorting(random_integers):
+    assert my_sorting_algorithm(random_integers) == sorted(random_integers)
+
+        
+```
+This resource is now available globally across all tested modules. The resource factory is always called again for every test that requires its output. Resources can also use other resources and tests can require many resources. You can define resources without a factory function by using the **add_resource**-function.
+
+```python
+import random
+import microtest
+
+
+microtest.add_resource('users', ['Foo', 'Bar'])
+
+@microtest.resource
+def posts(users):
+    return [ {'sender': random.choice(users), 'content': 'hello'} for _ in range(10) ]
+
+
+@microtest.test
+def test_something(users, posts):
+    pass
+```
+
+> **NOTE**: Resources should be used as data only. They should not be used to perform setup/cleanup operations with yield statements or other mechanisms.
+
+
+## Utilities
+
+Microtest provides an another way of sharing python objects between tested modules, **utilites**. Where resources are meant for easy and globally accessible data generation, utilites provide a way to share objects between module namespaces without importing. This means that large test suites don't need to be in a pyhton package and installed to share utility classes and functions. Here is an example:
+
+In *test_utils.py*:
+```python
+import microtest
+
+
+@microtest.utility
+class VeryHandyTestClass:
+
+    def do_something(self):
+        print('Hello!')
+
+```
+
+In *example_tests.py*:
+```python
+import microtest
+
+
+@microtest.test
+def test_that_uses_utils():
+    handy_thing = VeryHandyTestClass()
+    handy_thing.do_something()
+```
+The code in *example_tests.py* would normally raise a **NameError**, there isn't a thing called *VeryHandyTestClass*. Because the class was decorated as utility, it was injected into the *example_tests.py*-module's global namespace. This is basically what import does in Pyhton.
+
+Note that the *example_tests.py* will fail if it is executed before *test_utils.py*.
+Utilities should be defined during the configuration process.
+
 
 ## Config
