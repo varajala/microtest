@@ -90,7 +90,7 @@ class DefaultLogger(Logger):
         self.write_out(f'Ran {tests} tests in {time}s.\n\n')
 
         if errors == 0 and failed == 0:
-            self.write_out('OK.\n', Colors.OK_GREEN)
+            self.write_out('OK.\n\n', Colors.OK_GREEN)
             return
 
         self.write_out(f'ERRORS: ', Colors.FAILED_RED)

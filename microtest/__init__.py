@@ -39,7 +39,7 @@ def run_from_commandline(args):
 
     path = os.path.abspath(path)
     if os.path.isfile(path):
-        core.run_modules((path,), exec_name)
+        core.exec_modules((path,), exec_name)
         return
 
     modules = scanner.find_tests(path)
@@ -50,8 +50,8 @@ def run_from_commandline(args):
     if ENTRYPOINT in os.listdir(path):
         core.run_config(os.path.join(path, ENTRYPOINT), exec_name)
 
-    core.run_modules(modules, exec_name)
+    core.exec_modules(modules, exec_name)
 
 
 def run():
-    core.run()
+    core.run_current_module()

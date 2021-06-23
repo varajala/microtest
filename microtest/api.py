@@ -7,7 +7,6 @@ Edited: 23.6.2021
 
 import os
 import inspect
-import traceback as tb_module
 
 import microtest.core as core
 
@@ -144,18 +143,6 @@ def create_fixture(func):
         raise ValueError(info)
     
     globals_['fixture'] = obj
-
-
-class Error:
-    def __init__(self, exc_type, exc, tb):
-        self.exc_type = exc_type
-        self.exc = exc
-        self.tb = tb
-
-    @property
-    def traceback(self):
-        exc_info = (self.exc_type, self.exc, self.tb)
-        return ''.join(tb_module.format_exception(*exc_info))
 
 
 def raises(callable, args, exc_type):

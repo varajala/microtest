@@ -34,6 +34,7 @@ class Result:
 @dataclass
 class Module:
     path: str
+    logged: bool = False
     tests = dict()
 
 

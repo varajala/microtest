@@ -76,6 +76,8 @@ def initialize():
 
 def stop_testing():
     global t_start, t_stop
+    if not running:
+        return
     
     t_stop = timeit.default_timer()
     delta = round(t_stop - t_start, 3)
@@ -93,9 +95,15 @@ def filter_tests(namespace):
     return tests
 
 
-@while_running
 def collect_test(module_path, test_obj):
-    module = get_module(module_path)
+    module = modules.get(module_path, None)
+    if module is None:
+        module = Module(module_path)
+        modules[module_path] = module
+        if running:
+            logger.log_module_info(module_path)
+            module.logged = True
+    
     module.tests = filter_tests(test_obj.func.__globals__)
     module.tests.append(test_obj)
 
@@ -108,20 +116,17 @@ def register_test_results(module_path, func, exc):
     if exc:
         exc_name = exc.__class__.__name__
         result = Result.FAILED if exc_name == 'AssertionError' else Result.ERROR
-        if exc_name == 'AssertionError':
+        if result == Result.FAILED:
             failed += 1
         else:
             errors += 1
     
-    logger.log_test_info(func.__qualname__, result, exc)
-
-
-@while_running
-def get_module(module_path):
-    if module_path not in modules:
+    module = modules.get(module_path, None)
+    if module and not module.logged:
         logger.log_module_info(module_path)
-        modules[module_path] = Module(module_path)
-    return modules[module_path]
+        module.logged = True
+
+    logger.log_test_info(func.__qualname__, result, exc)
 
 
 @while_running
@@ -142,7 +147,7 @@ def run_config(path, exec_name):
 
 
 @while_running
-def run_modules(module_paths, exec_name):
+def exec_modules(module_paths, exec_name):
     with exec_context:
         for module_path in module_paths:
             if module_path not in modules:
@@ -175,8 +180,12 @@ def run_module(module_path):
         call_with_resources(test, test.signature)
 
 
-@while_running
-def run():
+def run_current_module():
+    if running or config_in_process:
+        return
+    
+    initialize()
+    
     modules_list = list(modules.values())
     if len(modules_list) == 0:
         return
