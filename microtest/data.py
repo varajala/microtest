@@ -1,3 +1,10 @@
+"""
+Common objects used across different modules.
+
+Author: Valtteri Rajalainen
+Edited: 23.6.2021
+"""
+
 from dataclasses import dataclass
 from typing import Any, Dict
 

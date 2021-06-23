@@ -1,6 +1,8 @@
 """
+Default logger for microtest.
+
 Author: Valtteri Rajalainen
-Edited: 4.5.2021
+Edited: 23.6.2021
 """
 
 import sys

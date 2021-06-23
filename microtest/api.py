@@ -1,9 +1,10 @@
 """
-Main decorators that define the API for the test tools.
+The user API.
 
 Author: Valtteri Rajalainen
-Edited: 26.5.2021
+Edited: 23.6.2021
 """
+
 import os
 import inspect
 import traceback as tb_module
@@ -13,13 +14,16 @@ import microtest.core as core
 
 __all__ = [
     'test',
-    'raises',
-    'patch',
     'resource',
     'utility',
-    'add_resource',
-    'create_fixture',
     'on_exit',
+    'call',
+    'create_fixture',
+    
+    'raises',
+    'patch',
+    'add_resource',
+    
     'Fixture',
     'PatchObject',
     ]
@@ -251,3 +255,9 @@ def add_resource(name, obj):
 
 def on_exit(func):
     core.on_exit(func)
+
+
+def call(func):
+    if core.running or core.config_in_process:
+        core.call_with_resources(func, generate_signature(func))
+    return func

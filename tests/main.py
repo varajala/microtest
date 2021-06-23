@@ -1,6 +1,9 @@
 import microtest
 
 
+microtest.exec_name = '__main__'
+
+
 @microtest.on_exit
 def teardown(exc_type, exc, tb):
     print('exit...')
@@ -21,4 +24,9 @@ class TestUtility:
     pass
 
 
-microtest.utility('foo', name='foo')
+@microtest.call
+def init_func(data, more_data):
+    assert data is not None
+    assert more_data is not None
+    microtest.utility('foo', name='foo')
+    assert microtest.core.running == False

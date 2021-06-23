@@ -1,6 +1,6 @@
 """
 Author: Valtteri Rajalainen
-Edited: 26.5.2021
+Edited: 23.6.2021
 """
 
 import os
@@ -19,6 +19,7 @@ import microtest.api
 __all__ = ['context', 'run'] + microtest.api.__all__
 
 context = Namespace()
+exec_name = 'microtest_runner'
 core.logger = DefaultLogger()
 
 ENTRYPOINT = 'main.py'
@@ -38,7 +39,7 @@ def run_from_commandline(args):
 
     path = os.path.abspath(path)
     if os.path.isfile(path):
-        core.run_modules((path,))
+        core.run_modules((path,), exec_name)
         return
 
     modules = scanner.find_tests(path)
@@ -47,9 +48,9 @@ def run_from_commandline(args):
         return
 
     if ENTRYPOINT in os.listdir(path):
-        modules.insert(0, os.path.join(path, ENTRYPOINT))
+        core.run_config(os.path.join(path, ENTRYPOINT), exec_name)
 
-    core.run_modules(modules)
+    core.run_modules(modules, exec_name)
 
 
 def run():

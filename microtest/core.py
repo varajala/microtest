@@ -1,3 +1,10 @@
+"""
+Stateful component of microtest.
+
+Author: Valtteri Rajalainen
+Edited: 23.6.2021
+"""
+
 import timeit
 import atexit
 import runpy
@@ -12,6 +19,7 @@ utilities = dict()
 modules = dict()
 logger = None
 running = False
+config_in_process = False
 
 errors: int = 0
 failed: int = 0
@@ -123,10 +131,24 @@ def register_module_exec_error(module_path, exc_type, exc, tb):
     logger.log_module_exec_error(module_path, exc_type, exc, tb)
 
 
+def run_config(path, exec_name):
+    global config_in_process
+    config_in_process = True
+    try:
+        runpy.run_path(path, init_globals=utilities, run_name=exec_name)
+
+    finally:
+        config_in_process = False
+
+
 @while_running
-def run_modules(modules, exec_name='microtest_runner'):
+def run_modules(module_paths, exec_name):
     with exec_context:
-        for module_path in modules:
+        for module_path in module_paths:
+            if module_path not in modules:
+                logger.log_module_info(module_path)
+                modules[module_path] = Module(module_path)
+            
             try:
                 runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
                 run_module(module_path)
@@ -163,7 +185,6 @@ def run():
     for test in module.tests:
         call_with_resources(test, test.signature)
     
-
 
 def call_with_resources(callable, signature):
     kwargs = dict()
