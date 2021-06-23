@@ -151,8 +151,9 @@ def exec_modules(module_paths, exec_name):
     with exec_context:
         for module_path in module_paths:
             if module_path not in modules:
+                modules[module_path] = module = Module(module_path)
                 logger.log_module_info(module_path)
-                modules[module_path] = Module(module_path)
+                module.logged = True
             
             try:
                 runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)

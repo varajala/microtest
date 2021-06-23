@@ -3,14 +3,10 @@ import microtest
 
 raise RuntimeError
 
-@microtest.test
-def test_func1():
-    pass
-
 
 @microtest.test
-def test_func2():
-    pass
+def test_exec_err():
+    assert False, 'Execution of this module should have been stopped...'
 
 
 if __name__ == '__main__':
