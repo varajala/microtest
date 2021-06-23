@@ -5,8 +5,11 @@ Edited: 4.5.2021
 
 import sys
 import os
-import traceback
 import re
+import traceback
+import io
+
+import microtest.assertion as assertion
 
 from microtest.data import *
 from microtest.core import Logger
@@ -63,10 +66,8 @@ class DefaultLogger(Logger):
         if result == Result.FAILED:
             tb = exc.__traceback__
             exc_type = type(exc)
-            tb_lines = traceback.format_exception(exc_type, exc, tb)
-            msg = assertion_introspect(tb_lines[-2])
-            self.write_out('-> ' + msg, Colors.FAILED_RED)
-            self.write_out('-> ' + tb_lines[-1], Colors.FAILED_RED)
+            msg = assertion.resolve_assertion_error(exc_type, exc, tb)
+            self.write_out(msg, Colors.FAILED_RED)
             return
 
         if result == Result.ERROR:
@@ -101,17 +102,3 @@ class DefaultLogger(Logger):
 
     def terminate(self):
         pass
-
-
-
-def assertion_introspect(tb_line):
-    ln_exp = re.compile(r'(?<=line )\d+')
-    ln = re.search(ln_exp, tb_line)[0]
-
-    assertion = ''
-    assert_exp = re.compile(r'(?<=assert )[^\n]+')
-    match = re.search(assert_exp, tb_line)
-    if match:
-        assertion = match[0]
-
-    return f'On line {ln}: {assertion}\n'

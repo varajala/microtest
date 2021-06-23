@@ -10,10 +10,13 @@ import traceback
 import microtest.scanner as scanner
 import microtest.core as core
 
-from microtest.data import *
-from microtest.api import *
+from microtest.data import Namespace
 from microtest.logger import DefaultLogger
+from microtest.api import *
+import microtest.api
 
+
+__all__ = ['context', 'run'] + microtest.api.__all__
 
 context = Namespace()
 core.logger = DefaultLogger()

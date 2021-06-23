@@ -36,7 +36,6 @@ class TestCase(core._TestObject):
         self.func = func
         self.signature = generate_signature(func)
         self.module_path = module_path
-        self.catch_errors = True
 
     def __call__(self, **kwargs):
         error = None
@@ -44,8 +43,6 @@ class TestCase(core._TestObject):
             self.func(**kwargs)
         
         except Exception as exc:
-            if not self.catch_errors:
-                raise exc
             error = exc
         
         finally:
@@ -95,22 +92,16 @@ class TestCaseWrapper:
     def __call__(self, **kwargs):
         fixture = self.fixture
         testcase = self.testcase
-        testcase.catch_errors = False
         try:
             if fixture._reset:
                 fixture._reset()
             testcase(**kwargs)
         
         except Exception as exc:
-            suppress_exc = False
             fixture.error = exc
             if fixture._cleanup:
-                suppress_exc = fixture._cleanup()
+                fixture._cleanup()
             
-            if not suppress_exc:
-                raise exc
-
-
 class FixtureIterator:
 
     def __init__(self, fixture):
@@ -171,16 +162,10 @@ def raises(callable, args, exc_type):
         callable(*args)
     
     except exc_type as err:
-        return Error(exc_type, err, err.__traceback__)
-
-    except Exception as err:
-        info = f'Expected an exception with type: {exc_type.__name__}. '
-        info += f'{err.__class__.__name__} was raised instead.'
-        raise AssertionError(info)
+        return True
 
     else:
-        info = 'No errors raised.'
-        raise AssertionError(info)
+        return False
 
 
 class Patch:
