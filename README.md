@@ -3,219 +3,133 @@ Simple but powerful testing utilities for Python.
 
 
 ## Table of contents
-- [Installation](installation)
-- [Use](use)
+- [Installation](#installation)
+- [Basic Use](#basic-use)
+- [Discovering tests](#discovering-tests)
+- [Fixtures](#fixtures)
+- [Config](#config)
 
 ## Installation
 
-To use this library, please install **Python 3.7+**. 
-Any Python version before 3.7 won't work because the pathlib is used in this project.
-
-You can check the version of your Python interpreter by typing the following command to the terminal:
-
-On Windows:
-
-    python --version
-  
-On Linux and Mac:
-
-    python3 --version
-    
-To install microtest download and unpack the zip folder with the source code, or fork and clone this project to
-a local repository. After this navigate to the toplevel directory where the **setup.py**-file is located.
-Here, give the following command to install the package with pip:
-
-Windows:
-
-    pip install .
+To install microtest download and unpack the zip folder with the source code, or fork and clone this project to a local repository. After this navigate to the toplevel directory where the **setup.py**-file is located and install the package with pip.
 
 
-Linux:
+    pyhton -m pip install .
 
-    pip3 install .
 
-## Use
-
-### Basic use
-To create test cases, import test from microtest.
-After this you can apply this decorator to any function or method to make it part of the test suite.
-This needs to be called somewhere in the module to do any testing. Here's a simple example:
+## Basic use
+Here is the most basic test scenario using microtest:
 
 ```python
-from microtest import test
+import microtest
 
-@test
-def test_function():
+
+@microtest.test
+def test_func():
     assert 10 > 0
     
+
 if __name__ == '__main__':
-    test_function()
+    microtest.run()
 ```
+The **test**-decorator tells microtest to run the function *test_func* as a part of the test suite and check its result.
+The **run**-function inside the *__name__ == '__main__'*-condition will execute the tests collected from the module and output their results.
+
+
 Now executing this module normally will produce the following output:
  ```shell
-  ===========================================================================
-  Started testing...
-  ===========================================================================
-  Ran 1 tests.
+===========================================================================
+Started testing...
+===========================================================================
 
-  OK.
+/home/varajala/dev/python/test.py
+test_func ................................................................. OK    
+
+---------------------------------------------------------------------------
+Ran 1 tests in 0.001s.
+
+OK.
  ```
- If the test function is not called, it will not be included in the test suite.
  
- Running microtest from the command line is preferrable to executing single modules directly.
- Any function decorated with the test-decorator will catch any errors, but when running a single module
- directly, any error thown outside the test cases won't be handeled and can effect the test output.
- Running microtest via the command line will handle all possible errors, even when thrown outside any test cases.
- 
- To execute all modules inside a directory, type the following command to the terminal:
- 
- On Windows:
- 
-    python -m microtest <path-to-the-directory>
-    
- Linux and Mac:
- 
-    python3 -m microtest <path-to-the-directory>
-    
-  This will result microtest to search all Python modules with a specific name inside the directory and its subdirectories and execute them.
-  The following Python modules are executed:
+ ## Discovering tests
+
+Microtest can be executed from the terminal with the following command:
+
+    python -m microtest .
+
+This command will start microtest at the current working directory. If microtest is ran from the terminal, it will automatically find all test modules iniside the provided directory and its children. If the provided path points to a file, only that file will be executed. In the case of no path provided, microtest defaults to the current working directory.
+
+All Python modules with the following names are included into the test suite:
   
   - Those starting with the name test\_ or tests\_
   - Those ending with the name \_test or \_tests
   - Those with the name test.py or tests.py
-  
-  **All modules will be executed with the \_\_name\_\_ - attribute set to '\_\_main\_\_'.**
-  
-  Let's run the previous example via the command line.
-  
-  Inside the directory, where the example module is: (running on Linux)
-  
-    python3 -m microtest .
-  
-  This will give the resulting output:
-  ```shell
-===========================================================================
-Started testing...
-===========================================================================
-Executed 1 modules in 0.002s.
-Ran 1 tests.
 
-OK.
-  ```
-  
-Now let's add more modules to test. Let's run microtest with the following filestructure:
-```shell
-.
-├── test_1.py
-├── test_2.py
-└── testpkg
-    ├── spam.py
-    ├── subpkg
-    │   ├── test_4.py
-    │   └── test_5.py
-    └── test_3.py
-```
+Before executing any collected modules, microtest looks for a file called **main.py** in the provided directory and executes it before executing any other modules. This provides a way to configure later tests. More on this in the [config](#config)-section.
 
-Output:
-```shell
-===========================================================================
-Started testing...
-===========================================================================
-Executed 5 modules in 0.004s.
-Ran 10 tests.
-
-OK.
- ```
-
-### Output
-
-By default microtest will display a traceback of all failed tests and errors in addition to the start and finish notifications.
-Currently there are two more modes for output verbosity. If you want minimal output, use the flag **-m**, or **--minimal**.
-This will prevent the traceback logging from errors. For more verbose output use the **-v**, or **--verbose** flag.
-THe verbose mode adds a breakdown of all the executed modules and the testcases in them.
-
-Here's how the verbose output looks like:
-
-```shell
-===========================================================================
-Started testing...
-===========================================================================
-Module: /home/varajala/dev/test/test_2.py
-main ....................................................................... OK
+When running microtest from the terminal, the **run**-function will have no effect.
+All tests decorated with the **test**-decorator will be executed automatically.
 
 
-Module: /home/varajala/dev/test/test_1.py
-hello ...................................................................... OK
-test_assertion ............................................................. OK
+## Fixtures
+
+A fixture is an utility that helps you perform the following things:
+ 
+  - Setting up the testing environment
+  - Performing reset actions after every test
+  - Performing cleanup actions after the tests in the fixture are completed
+
+Microtest provides a Fixture class to do this for you. Here is an example:
+
+```python
+import sqlite3
+import tempfile
+import os
+import microtest
+
+import tested_module
 
 
-Module: /home/varajala/dev/test/testpkg/test_3.py
-hello ...................................................................... OK
-hello ...................................................................... OK
-hello ...................................................................... OK
-hello ...................................................................... OK
-hello ...................................................................... OK
+fixture = microtest.Fixture()
 
-
-Module: /home/varajala/dev/test/testpkg/subpkg/test_4.py
-main ....................................................................... OK
-
-
-Module: /home/varajala/dev/test/testpkg/subpkg/test_5.py
-Test.test_method ........................................................... OK
-
-
-===========================================================================
-Executed 5 modules in 0.004s.
-Ran 10 tests.
-
-OK.
- ```
-
-Notice that the **filepath always has to be the last argument provided.**
-
-### Fixtures and more advanced tests
-
-Here's a suggestion for a template:
-
- ```python
-import pathlib
-
-from microtest import test
-from yourapp.database import DatabaseAPI
-
-TEST_DATABASE = pathlib.Path(__file__).parent.joinpath('test_db.db')
-
-
+@fixture.setup
 def setup():
-    DatabaseAPI.connect(TEST_DATABASE)
-    
+    global fd, path
+    fd, path = tempfile.mkstemp()
+
+
+@fixture.reset
+def reset():
+    with sqlite3.connect(path) as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM users')
+        conn.commit()
+
+
+@fixture.cleanup
 def cleanup():
-    DatabaseAPI.disconnect()
+    os.unlink(path)
+    os.close(fd)
 
 
-def run():
-    setup()
-    #insert test cases here
-    test_case1()
-    test_case2()
-    cleanup()
+@microtest.test
+def test_user_creation():
+    tested_module.create_user(first_name='Foo', last_name='Bar')
 
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = tested_module.user_factory
+        cursor = conn.cursor()
+        sql = 'SELECT * FROM users WHERE first_name = ? AND last_name = ?'
+        cursor.execute(sql, ('Foo', 'Bar'))
+        user = cursor.fetchone()
 
-@test
-def test_case1():
-    pass
+    assert user is not None
+    assert user.first_name == 'Foo'
+    assert user.last_name == 'Bar'
+        
+```
+The example code above is an imaginary test scenario using sqlite3 database with a temporary file. Because the fixture is in the module namespace, microtest will perform the *setup*-function before any testcases. This creates a temporary file, which can be used to create temporary database. The *reset*-function will be called before each testcase. This will delete all rows from the table *users*, so the tests don't have an effect on each other. The *cleanup*-function will be called after all tests are executed, or if any exceptions occur. Here the temporary file is removed.
 
+In microtest Fixtures are scoped to the module. You should not try to use same Fixture object for multiple modules. One module should have only one Fixture.
 
-@test
-def test_case2():
-    pass
-
-
-if __name__ == '__main__':
-    run()
-  ```
- It's easy to setup more complex fixtures and setup/cleanup actions, since there are no limitations by the testing library.
- Python offers great metaprogramming tools, so use them to implement features like skipping, fixtures and so on.
- Microtest mainly provides a tool to search tests inside a directory structure and execute them.
- You can also use microtest only as a scanner to find tests and use other testing tools, such as Python's builtin unittest module.
+## Config
