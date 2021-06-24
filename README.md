@@ -5,11 +5,13 @@ Simple but powerful testing utilities for Python.
 ## Table of contents
 - [Installation](#installation)
 - [Basic Use](#basic-use)
-- [Discovering tests](#discovering-tests)
+- [Discovering Tests](#discovering-tests)
+- [Different Outputs](#different-outputs)
 - [Fixtures](#fixtures)
 - [Resources](#resources)
 - [Utilites](#utilities)
 - [Config](#config)
+- [Other Testing Utilities](#other-testing-utilities)
 
 ## Installation
 
@@ -53,7 +55,7 @@ Ran 1 tests in 0.001s.
 OK.
  ```
  
- ## Discovering tests
+ ## Discovering Tests
 
 Microtest can be executed from the terminal with the following command:
 
@@ -72,6 +74,97 @@ Before executing any collected modules, microtest looks for a file called **main
 When running microtest from the terminal, the **run**-function will have no effect.
 All tests decorated with the **test**-decorator will be executed automatically.
 
+
+## Different Outputs
+
+Microtest will provide a overview of all execcuted modules and tests inside the modules. Here's how the default output looks for succesful test run:
+
+```shell
+===========================================================================
+Started testing...
+===========================================================================
+
+/home/varajala/dev/project/tests/file_handling_tests.py
+test_valid_filenames ..................................................... OK    
+test_invalid_filenames ................................................... OK    
+test_valid_path_extensions ............................................... OK    
+test_invalid_path_extensions ............................................. OK    
+test_file_creation ....................................................... OK    
+test_dir_creation ........................................................ OK    
+test_renaming ............................................................ OK    
+test_renaming_errors ..................................................... OK    
+test_file_removal ........................................................ OK    
+test_dir_removal ......................................................... OK    
+test_common_paths ........................................................ OK    
+test_child_paths ......................................................... OK    
+test_access_query ........................................................ OK    
+
+/home/varajala/dev/project/tests/cmd_parser_tests.py
+test_parsing ............................................................. OK    
+test_invalid_parser_inputs ............................................... OK    
+test_globs ............................................................... OK    
+test_cmd_validation ...................................................... OK    
+test_arg_validation ...................................................... OK    
+
+---------------------------------------------------------------------------
+Ran 18 tests in 0.856s.
+
+OK.
+
+ ```
+Here two modules were tested and total of 18 tests were executed succesfully.
+
+
+When a test fails due to failed assertion microtest will resolve the runtime values in the expression and show the assertion with those values. For example the following test:
+
+```python
+import microtest
+
+
+def func(string):
+    return string.title()
+
+
+@microtest.test
+def test_func1():
+    assert func('foo') == 'Foo'[::-1], 'Error message for this assertion'
+
+
+@microtest.test
+def test_func2():
+    assert func('foo') == 'Foo'
+
+
+@microtest.test
+def test_func3():
+    assert func('FOO') == 'Foo'
+ ```
+
+Would generate the following output:
+
+```shell
+===========================================================================
+Started testing...
+===========================================================================
+
+/home/varajala/dev/project/tests.py
+test_func1 ........................................................... FAILED    
+
+AssertionError on line 10:
+assert 'Foo' == 'ooF'
+
+Error message for this assertion
+
+test_func2 ........................................................... OK    
+test_func3 ........................................................... OK
+
+---------------------------------------------------------------------------
+Ran 3 tests in 0.223s.
+
+ERRORS: 0
+FAILED: 1
+
+```
 
 ## Fixtures
 
@@ -193,7 +286,7 @@ class VeryHandyTestClass:
         print('Hello!')
 
 ```
-
+    
 In *example_tests.py*:
 ```python
 import microtest
@@ -207,7 +300,132 @@ def test_that_uses_utils():
 The code in *example_tests.py* would normally raise a **NameError**, there isn't a thing called *VeryHandyTestClass*. Because the class was decorated as utility, it was injected into the *example_tests.py*-module's global namespace. This is basically what import does in Pyhton.
 
 Note that the *example_tests.py* will fail if it is executed before *test_utils.py*.
-Utilities should be defined during the configuration process.
+It is recommended that utilities are defined during the configuration process.
 
 
 ## Config
+
+As mentioned previously, microtest looks for a file called **main.py** in the root directory when executed as a module. If the file is present in the directory, microtest will execute it separetly from other test modules. This allows you to perform config actions before any actual tests are executed. 
+
+For example you can do some of the following things:
+
+  - Set the \_\_name\_\_ - attribute of the executed modules. 
+  - Define resources and utilites used globally between tested modules.
+  - Define cleanup actions after all tests are executed, or an exception is raised.
+
+>**NOTE:** Because the config process is separate from the actual testing, you should not insert any tests to the **main.py** - file
+
+Microtest provides two more decorators to make the config process easy:
+
+  - **call** -> Simply call the wrapped function if microtest is running.
+  - **on_exit** -> Provide a function to be called before the program is terminated.
+
+For example if you wanted to make a similiar temporary database as in the Fixture [example](#fixture), but available globally to all test modules, here's how it would look:
+
+In *main.py:*
+```python
+import tempfile
+import os
+import sqlite3
+import microtest
+
+
+@microtest.call
+def setup():
+    global fd, path
+    fd, path = tempfile.mkstemp()
+    microtest.exec_name = '__main__'
+
+
+@microtest.resource
+def database():
+    conn = sqlite3.connect(path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+@microtest.on_exit
+def cleanup(exc_type, exc, tb):
+    os.unlink(path)
+    os.close(fd)
+```
+Now the temporary file is created before any tests are executed and made available as a resource in all tested modules. Functions decorated by the **call** - decorator can also request resources smiliarly to those decorated with the **test** - decorator.
+
+The cleanup - function is called when microtest is about to exit. It takes three named arguments: exception type, exception instance and the exception traceback. These are None if microtest is exiting normally. This takes care of closing the file properly.
+
+In this example, the \_\_name\_\_ - attribute for executed modules is set to '\_\_main\_\_'. It defaults to **'microtest_runner'**. This is simply done by modifying the microtest.exec_name - variable.
+
+
+## Other Testing Utilities
+
+Microtest also provides some useful utlities for writing less testing code. First, let's take a look at the **raises** - function.
+
+```python
+import microtest
+
+
+def add(a, b):
+    return a + b
+
+
+@microtest.test
+def test_failing():
+    assert microtest.raises(add, (1, '1'), TypeError)
+```
+
+The **raises** - function takes three arguments:
+
+  - The function to be called.
+  - The arguments to be passed into the function.
+  - The error type to be expected.
+
+It returns True if the function raises the excpected error, False otherwise. All other error types will not be handled in any way. The defenition is roughly the following:
+
+```python
+def raises(func, args, error):
+    try:
+        func(*args)
+    except error:
+        return True
+    else:
+        return False
+```
+
+Mirotest also provides tools for [mocking](https://stackoverflow.com/questions/2665812/what-is-mocking) other objects. For this there is a **patch** - function that returns a context manager. Here's an example:
+
+```python
+import microtest
+
+import flask_app.commands as commands
+
+
+@microtest.test
+def test_database_init_command(app):
+    runner = app.test_cli_runner()
+    items = {'init_called': False}
+
+    def dummy_init(*args, **kwargs):
+        nonlocal items
+        items['init_called'] = True
+    
+    items['init'] = dummy_init
+
+    with microtest.patch(commands, 'database', microtest.PatchObject(items)):
+        result = runner.invoke(args=['init-db'])
+        assert items['init_called']
+        assert 'Database initialized' in result.output
+```
+
+This test is pretty much a microtest translation from the [Flask tutorial](https://flask.palletsprojects.com/en/2.0.x/tutorial/tests/) application tests. This test checks the command line function that initializes the database. Because we want the actual database to not be effected by the test, the database module in our tested module's namespace is temporarily replaced by our mock database module.
+
+The **patch** - function takes three arguments:
+
+  - The object to be temporarily replaced by the mock object.
+  - The attribute name of the mock object we are replacing.
+  - The mock object.
+
+Here the mock object is an object provided byt microtest called **PatchObject**. It is simply a thin wrapper around a dictionary, so that you can access it by **getattr** and **setattr**. This allows easy introspection on the modifications made to the mock object.
+
+Within the context manager microtest will route the calls to getattr to the mocked object, if the requested attribute is found. If the getattr fails on the mock object, the getattr is routed back to the original object.
+
+See the python unittest documentation on [patching](https://docs.python.org/3/library/unittest.mock.html#where-to-patch) for more info.
