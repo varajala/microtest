@@ -41,7 +41,7 @@ The **run**-function inside the *__name__ == '__main__'*-condition will execute 
 
 
 Now executing this module normally will produce the following output:
- ```shell
+ ```
 ===========================================================================
 Started testing...
 ===========================================================================
@@ -79,7 +79,7 @@ All tests decorated with the **test**-decorator will be executed automatically.
 
 Microtest will provide a overview of all execcuted modules and tests inside the modules. Here's how the default output looks for succesful test run:
 
-```shell
+```
 ===========================================================================
 Started testing...
 ===========================================================================
@@ -142,7 +142,7 @@ def test_func3():
 
 Would generate the following output:
 
-```shell
+```
 ===========================================================================
 Started testing...
 ===========================================================================
