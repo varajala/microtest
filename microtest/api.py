@@ -7,7 +7,7 @@ Edited: 23.6.2021
 
 import os
 import inspect
-
+import traceback
 import microtest.core as core
 
 
@@ -28,28 +28,36 @@ __all__ = [
     ]
 
 
-def generate_signature(func):
-    signature = inspect.signature(func)
-    return [ param for param in signature.parameters ]
-
-
-class TestCase(core._TestObject):
-
-    def __init__(self, module_path, func):
-        self.func = func
-        self.signature = generate_signature(func)
-        self.module_path = module_path
-
-    def __call__(self, **kwargs):
+class CaptureErrors(core._TestObject):
+    def __call__(self, *args, **kwargs):
         error = None
         try:
-            self.func(**kwargs)
-        
+            self.func(*args, **kwargs)
         except Exception as exc:
             error = exc
-        
-        finally:
-            core.register_test_results(self.module_path, self.func, error)
+        return error
+
+
+class CombinedError(Exception):
+    def __init__(self, *, info, last_raised, during=None):
+        super().__init__(self)
+        self.__traceback__ = last_raised.__traceback__
+        self.info = info
+        self.last_raised = last_raised
+        self.during = during
+
+    def __str__(self):
+        parts = [
+            f'\n\n{self.info}:\n',
+        ]
+        if self.during:
+            tb = ''.join(traceback.format_exception(type(self.during), self.during, self.during.__traceback__))
+            parts.append(tb)
+            parts.append('While handling the exception above another error occured:\n')
+
+        tb = ''.join(traceback.format_exception(type(self.last_raised), self.last_raised, self.__traceback__))
+        parts.append(tb)
+        return '\n'.join(parts).rstrip()
 
 
 class Fixture(core._FixtureObject):
@@ -68,43 +76,56 @@ class Fixture(core._FixtureObject):
 
 
     def setup(self, func):
-        self._setup = func
-        return func
+        self._setup = CaptureErrors(func)
 
 
     def cleanup(self, func):
-        self._cleanup = func
-        return func
+        self._cleanup = CaptureErrors(func)
 
 
     def reset(self, func):
-        self._reset = func
-        return func
+        self._reset = CaptureErrors(func)
 
 
     def __iter__(self):
         return FixtureIterator(self)
 
 
-class TestCaseWrapper:
-    def __init__(self, fixture, testcase):
+    def abort_with_error(self, error, info):
+        if self._cleanup:
+            cleanup_error = core.call_with_resources(self._cleanup)
+            if cleanup_error:
+                raise CombinedError(info = info, last_raised = cleanup_error, during = error)
+        raise CombinedError(info = info, last_raised = error)
+
+
+class TestCaseWrapper(core._TestObject):
+    def __init__(self, fixture, test_obj):
         self.fixture = fixture
-        self.testcase = testcase
-        self.signature = testcase.signature
+        self.test_obj = test_obj
+        core._TestObject.__init__(self, test_obj.func)
 
     def __call__(self, **kwargs):
         fixture = self.fixture
-        testcase = self.testcase
-        try:
-            if fixture._reset:
-                fixture._reset()
-            testcase(**kwargs)
+
+        if fixture._reset:
+            error = core.call_with_resources(fixture._reset)
+            if error:
+                info = 'An error occured while performing reset actions'
+                self.fixture.abort_with_error(error, info)
+                return
         
-        except Exception as exc:
+        exc = self.test_obj(**kwargs)
+        if exc:
             fixture.error = exc
             if fixture._cleanup:
-                fixture._cleanup()
+                error = core.call_with_resources(fixture._cleanup)
+                if error:
+                    info = f'An error occurred while executing function "{self.func.__qualname__}"'
+                    return CombinedError(info = info, last_raised = error, during = exc)
+        return exc
             
+
 class FixtureIterator:
 
     def __init__(self, fixture):
@@ -114,15 +135,19 @@ class FixtureIterator:
         fixture = self.fixture
         if not fixture.setup_done:
             if fixture._setup:
-                fixture._setup()
+                error = core.call_with_resources(fixture._setup)
+                if error:
+                    info = 'Fixture setup failed'
+                    self.fixture.abort_with_error(error, info)
+                    return
             fixture.setup_done = True
         
         if fixture.testcases:
-            testcase = fixture.testcases.pop(0)
-            return TestCaseWrapper(self.fixture, testcase)
+            test_obj = fixture.testcases.pop(0)
+            return TestCaseWrapper(self.fixture, test_obj)
         
         if fixture._cleanup and not fixture.error:
-            fixture._cleanup()
+            core.call_with_resources(fixture._cleanup)
         raise StopIteration
 
 
@@ -130,14 +155,14 @@ class FixtureIterator:
 def test(func):
     """Make a single function part of the test suite."""
     module_path = os.path.abspath(inspect.getsourcefile(func))
-    testcase = TestCase(module_path, func)
+    testcase = CaptureErrors(func)
     core.collect_test(module_path, testcase)
     return testcase
 
 
 def create_fixture(func):
     globals_ = func.__globals__
-    obj = core.call_with_resources(func, generate_signature(func))
+    obj = core.call_with_resources(func)
     if not isinstance(obj, Fixture):
         ifno = '@create_fixture excpects a callable that retruns a Fixture object'
         raise ValueError(info)
@@ -226,7 +251,7 @@ class PatchObject:
 
 
 def resource(func):
-    obj = core.call_with_resources(func, generate_signature(func))
+    obj = core.call_with_resources(func)
     core.add_resource(func.__name__, obj)
 
 
@@ -246,5 +271,5 @@ def on_exit(func):
 
 def call(func):
     if core.running or core.config_in_process:
-        core.call_with_resources(func, generate_signature(func))
+        core.call_with_resources(func)
     return func

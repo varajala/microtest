@@ -6,6 +6,7 @@ Edited: 23.6.2021
 """
 
 import timeit
+import inspect
 import atexit
 import runpy
 
@@ -49,7 +50,16 @@ class Logger:
 
 
 class _TestObject:
-    pass
+    def __init__(self, test_func):
+        self.func = test_func
+    
+    def __getattribute__(self, attr):
+        try:
+            return object.__getattribute__(self, attr)
+        except AttributeError:
+            func = object.__getattribute__(self, 'func')
+            return object.__getattribute__(func, attr)
+            
 
 class _FixtureObject:
     pass
@@ -178,7 +188,8 @@ def run_module(module_path):
 
     module = modules[module_path]
     for test in module.tests:
-        call_with_resources(test, test.signature)
+        error = call_with_resources(test)
+        register_test_results(module_path, test, error)
 
 
 def run_current_module():
@@ -193,16 +204,35 @@ def run_current_module():
 
     module = modules_list.pop(0)
     for test in module.tests:
-        call_with_resources(test, test.signature)
+        error = call_with_resources(test)
+        register_test_results(module.path, test, error)
+
+
+def generate_signature(obj):
+    func_obj = None
+    if inspect.isfunction(obj):
+        func_obj = obj
+
+    if issubclass(obj.__class__, _TestObject):
+        func_obj = obj.func
+
+    if func_obj is None:
+        info = 'Cannot generate signature for object that is not '
+        info += 'a function or microtest.core._TestObject subclass instance.'
+        raise TypeError(info)
+    
+    signature = inspect.signature(func_obj)
+    return [ param for param in signature.parameters ]
     
 
-def call_with_resources(callable, signature):
+def call_with_resources(func):
     kwargs = dict()
+    signature = generate_signature(func)
     for item in signature:
         if item not in resources.keys():
             raise NameError(f'Undefined resource "{item}"')
         kwargs[item] = resources[item]
-    return callable(**kwargs)
+    return func(**kwargs)
 
 
 def add_resource(name, obj):
