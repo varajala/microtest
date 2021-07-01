@@ -16,6 +16,15 @@ class Tests(unittest.TestCase):
             self.assertTrue('assert 2 == 1' in result)
 
 
+    def test_basic_assertion_multiple_operators(self):
+        x = None
+        try:
+            assert x is not None
+        except AssertionError as err:
+            result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
+            self.assertTrue('assert None is not None' in result)
+
+
     def test_string_assertion(self):
         x = 'Foo and Bar'
         try:

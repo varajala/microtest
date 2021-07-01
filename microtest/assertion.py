@@ -85,15 +85,17 @@ def resolve_assertion_error(exc_type, exception, tb):
     assertion, context = parse_assertion_line(assertion_line, tb_text)
     ops, expressions = split_expressions(assertion)
     
-    values = [ eval(expression, globals_, locals_) for expression in expressions ]
+    values = [ eval(expression, globals_, locals_) if expression else ':blank:' for expression in expressions]
     
     buffer = io.StringIO()
     buffer.write(f'\nAssertionError on line {lineno}:\n')
     buffer.write('assert ')
     while values:
-        buffer.write(repr(values.pop(0)))
-        if ops:
+        val = values.pop(0)
+        if val != ':blank:':
+            buffer.write(repr(val))
             buffer.write(' ')
+        if ops:
             buffer.write(ops.pop(0))
             buffer.write(' ')
 

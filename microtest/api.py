@@ -18,6 +18,7 @@ __all__ = [
     'on_exit',
     'call',
     'create_fixture',
+    'abort',
     
     'raises',
     'patch',
@@ -273,3 +274,7 @@ def call(func):
     if core.running or core.config_in_process:
         core.call_with_resources(func)
     return func
+
+
+def abort():
+    core.abort = True

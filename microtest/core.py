@@ -7,7 +7,6 @@ Edited: 23.6.2021
 
 import timeit
 import inspect
-import atexit
 import runpy
 
 from microtest.data import *
@@ -28,6 +27,8 @@ tests: int = 0
 
 t_start: float = None
 t_end: float = None
+
+abort = False
 
 
 class Logger:
@@ -80,11 +81,11 @@ def initialize():
             raise ValueError(info)
     logger.log_start_info()
     t_start = timeit.default_timer()
-    atexit.register(stop_testing)
+    exec_context.on_exit.append(stop_testing)
     running = True
 
 
-def stop_testing():
+def stop_testing(*args):
     global t_start, t_stop
     if not running:
         return
@@ -158,6 +159,7 @@ def run_config(path, exec_name):
 
 @while_running
 def exec_modules(module_paths, exec_name):
+    global abort
     with exec_context:
         for module_path in module_paths:
             if module_path not in modules:
@@ -167,6 +169,9 @@ def exec_modules(module_paths, exec_name):
             
             try:
                 runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
+                if abort:
+                    abort = False
+                    continue
                 run_module(module_path)
 
             except KeyboardInterrupt:
@@ -198,14 +203,15 @@ def run_current_module():
     
     initialize()
     
-    modules_list = list(modules.values())
-    if len(modules_list) == 0:
-        return
+    with exec_context:
+        modules_list = list(modules.values())
+        if len(modules_list) == 0:
+            return
 
-    module = modules_list.pop(0)
-    for test in module.tests:
-        error = call_with_resources(test)
-        register_test_results(module.path, test, error)
+        module = modules_list.pop(0)
+        for test in module.tests:
+            error = call_with_resources(test)
+            register_test_results(module.path, test, error)
 
 
 def generate_signature(obj):
@@ -244,4 +250,4 @@ def add_utility(name, obj):
 
 
 def on_exit(func):
-    exec_context.on_exit = func
+    exec_context.on_exit.insert(0, func)

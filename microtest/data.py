@@ -59,11 +59,12 @@ class Namespace:
 
 class ExecutionContext:
     def __init__(self):
-        self.on_exit = None
+        self.on_exit = list()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc, tb):
         if self.on_exit:
-            return self.on_exit(exc_type, exc, tb)
+            for item in self.on_exit:
+                item(exc_type, exc, tb)
