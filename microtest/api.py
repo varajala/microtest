@@ -171,12 +171,12 @@ def create_fixture(func):
     globals_['fixture'] = obj
 
 
-def raises(callable, args, exc_type):
+def raises(callable, params, exc_type):
     if not inspect.isclass(exc_type):
         raise TypeError('Argument exc_type was not a class.')
-    
+
     try:
-        callable(*args)
+        callable(**params) if isinstance(params, dict) else callable(*params)
     
     except exc_type as err:
         return True
