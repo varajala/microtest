@@ -7,6 +7,7 @@ Edited: 23.6.2021
 
 from dataclasses import dataclass
 from typing import Any, Dict
+import sys
 
 
 @dataclass
@@ -18,10 +19,25 @@ class Output:
 
 @dataclass
 class Colors:
+    #linux, mac
     OK_GREEN = '\033[92m'
     FAILED_RED = '\033[91m'
     INFO_CYAN = '\033[96m'
     RESET = '\033[0m'
+
+    if sys.platform.startswith('win'):
+        try:
+            import colorama
+            colorama.init()
+        
+        except (ModuleNotFoundError, ImportError):
+            info = '\n[ WARNING ]\n'
+            info += 'You are running on a Windows platform where ANSI colors are not natively supported.\n'
+            info += 'To enable coloring please install the colorama package: \n\n > python -m pip install colorama\n\n'
+            sys.stderr.write(info)
+
+            input('Press ENTER to continue... ')
+            OK_GREEN = FAILED_RED = INFO_CYAN = RESET = ''
 
 
 @dataclass
