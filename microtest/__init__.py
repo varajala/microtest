@@ -50,7 +50,3 @@ def run_from_commandline(args):
         core.run_config(os.path.join(path, ENTRYPOINT), exec_name)
 
     core.exec_modules(modules, exec_name)
-
-
-def run():
-    core.run_current_module()

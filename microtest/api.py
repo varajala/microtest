@@ -8,6 +8,7 @@ import os
 import inspect
 import traceback
 import microtest.core as core
+import functools
 
 
 __all__ = [
@@ -18,6 +19,7 @@ __all__ = [
     'call',
     'group',
     
+    'run',
     'abort',
     'raises',
     'patch',
@@ -36,12 +38,17 @@ class CaptureErrors(core._TestObject):
 
     Is a subclass of core._TestObject (core will reckognize this as a testcase).
     """
+    def __init__(self, func, module_path):
+        super().__init__(func, module_path)
+    
     def __call__(self, *args, **kwargs):
         error = None
         try:
             self.func(*args, **kwargs)
         except Exception as exc:
             error = exc
+        
+        core.register_test_results(self.module_path, self, error)
         return error
 
 
@@ -67,6 +74,18 @@ class CombinedError(Exception):
         return '\n'.join(parts).rstrip()
 
 
+def capture_exception(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        error = None
+        try:
+            func(*args, **kwargs)
+        except Exception as exc:
+            error = exc
+        return error
+    return wrapper
+
+
 class Fixture(core._FixtureObject):
 
     def __init__(self, *, reset = None, setup = None, cleanup = None):
@@ -83,15 +102,15 @@ class Fixture(core._FixtureObject):
 
 
     def setup(self, func):
-        self._setup = CaptureErrors(func)
+        self._setup = capture_exception(func)
 
 
     def cleanup(self, func):
-        self._cleanup = CaptureErrors(func)
+        self._cleanup = capture_exception(func)
 
 
     def reset(self, func):
-        self._reset = CaptureErrors(func)
+        self._reset = capture_exception(func)
 
 
     def __iter__(self):
@@ -117,7 +136,7 @@ class TestCaseWrapper(core._TestObject):
     def __init__(self, fixture, test_obj):
         self.fixture = fixture
         self.test_obj = test_obj
-        core._TestObject.__init__(self, test_obj.func)
+        core._TestObject.__init__(self, test_obj.func, test_obj.module_path)
 
     def __call__(self, **kwargs):
         fixture = self.fixture
@@ -174,7 +193,7 @@ def test(func):
     Make a single function part of the test suite.
     """
     module_path = os.path.abspath(inspect.getsourcefile(func))
-    testcase = CaptureErrors(func)
+    testcase = CaptureErrors(func, module_path)
     core.collect_test(module_path, testcase)
     return testcase
 
@@ -311,3 +330,6 @@ def exclude_groups(*args):
 def only_groups(*args):
     for name in args:
         core.include_groups.add(name)
+
+def run():
+    core.run_current_module()

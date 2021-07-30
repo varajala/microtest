@@ -53,8 +53,9 @@ class Logger:
 
 
 class _TestObject:
-    def __init__(self, test_func):
+    def __init__(self, test_func, module_path):
         self.func = test_func
+        self.module_path = module_path
         self.group = None
     
     def __getattribute__(self, attr):
@@ -209,8 +210,7 @@ def run_module(module_path):
 
     module = modules[module_path]
     for test in module.tests:
-        error = call_with_resources(test)
-        register_test_results(module_path, test, error)
+        call_with_resources(test)
 
 
 def run_current_module():
@@ -230,8 +230,7 @@ def run_current_module():
         
         namespace = module.tests[0].func.__globals__
         for test in filter_tests(namespace):
-            error = call_with_resources(test)
-            register_test_results(module.path, test, error)
+            call_with_resources(test)
 
 
 def generate_signature(obj):
