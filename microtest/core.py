@@ -66,6 +66,9 @@ class _FixtureObject:
 
 
 def while_running(func):
+    """
+    Wrapper function to ensure proper initialization before execution.
+    """
     def wrapper(*args, **kwargs):
         if not running:
             initialize()
@@ -76,8 +79,9 @@ def while_running(func):
 def initialize():
     global running, t_start
     if logger is None or not issubclass(type(logger), Logger):
-            info = 'Invalid configuration. No logger or invalid logger interface'
-            raise ValueError(info)
+        info = 'Invalid configuration. No logger or invalid logger interface'
+        raise ValueError(info)
+    
     logger.log_start_info()
     t_start = timeit.default_timer()
     exec_context.on_exit.append(stop_testing)
@@ -97,6 +101,9 @@ def stop_testing(*args):
 
 
 def filter_tests(namespace):
+    """
+    Find testcases and possible Fixture inside the module namespace.
+    """
     tests = [ item for item in namespace.values() if issubclass(type(item), _TestObject) ]
     for item in namespace.values():
         if issubclass(type(item), _FixtureObject):

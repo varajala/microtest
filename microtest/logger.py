@@ -18,7 +18,7 @@ from microtest.core import Logger
 
 class DefaultLogger(Logger):
     
-    def __init__(self, output_mode=Output.DEFAULT, out=sys.stdout):
+    def __init__(self, output_mode=Output.DEFAULT, out: io.StringIO = sys.stdout):
         self.mode = output_mode
         self.out = out
         self.width = 75
@@ -47,7 +47,7 @@ class DefaultLogger(Logger):
         exc_type = type(exc)
         tb_lines = traceback.format_exception(exc_type, exc, tb)
         self.write_out('\n')
-        self.write_out(''.join(tb_lines), Colors.FAILED_RED)
+        self.write_out(''.join(tb_lines), Colors.RED)
         self.write_out('\n')
 
 
@@ -61,14 +61,14 @@ class DefaultLogger(Logger):
         self.write_out(func_name)
         padding = self.width - len(func_name) - len(result)
         self.write_out(' ' + padding * '.' + ' ')
-        color = Colors.OK_GREEN if result == Result.OK else Colors.FAILED_RED
+        color = Colors.GREEN if result == Result.OK else Colors.RED
         self.write_out(result + '    \n', color)
 
         if result == Result.FAILED:
             tb = exc.__traceback__
             exc_type = type(exc)
             msg = assertion.resolve_assertion_error(exc_type, exc, tb)
-            self.write_out(msg, Colors.FAILED_RED)
+            self.write_out(msg, Colors.RED)
             return
 
         if result == Result.ERROR:
@@ -80,7 +80,7 @@ class DefaultLogger(Logger):
 
 
     def log_module_info(self, module_path):
-        self.write_out('\n' + module_path + '\n', Colors.INFO_CYAN)
+        self.write_out('\n' + module_path + '\n', Colors.CYAN)
 
     
     def log_results(self, tests, failed, errors, time):
@@ -89,13 +89,13 @@ class DefaultLogger(Logger):
         self.write_out(f'Ran {tests} tests in {time}s.\n\n')
 
         if errors == 0 and failed == 0:
-            self.write_out('OK.\n\n', Colors.OK_GREEN)
+            self.write_out('OK.\n\n', Colors.GREEN)
             return
 
-        self.write_out(f'ERRORS: ', Colors.FAILED_RED)
+        self.write_out(f'ERRORS: ', Colors.RED)
         self.write_out(str(errors) + '\n')
 
-        self.write_out(f'FAILED: ', Colors.FAILED_RED)
+        self.write_out(f'FAILED: ', Colors.RED)
         self.write_out(str(failed) + '\n')
 
         self.write_out('\n')
@@ -103,3 +103,4 @@ class DefaultLogger(Logger):
 
     def terminate(self):
         pass
+

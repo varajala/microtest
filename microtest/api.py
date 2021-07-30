@@ -29,6 +29,12 @@ __all__ = [
 
 
 class CaptureErrors(core._TestObject):
+    """
+    A simple wrapper object for caputring exceptions.
+    Returns the raised exception instance or None if no exceptions were raised.
+
+    Is a subclass of core._TestObject (core will reckognize this as a testcase).
+    """
     def __call__(self, *args, **kwargs):
         error = None
         try:
@@ -100,6 +106,13 @@ class Fixture(core._FixtureObject):
 
 
 class TestCaseWrapper(core._TestObject):
+    """
+    Wrapper object used inside fixtures to capture errors and
+    execute possible cleanup actions. Wraps the CaptureErrors wrapper object.
+
+    Returns an exception instance if one or more exceptions are raised
+    during execution and cleanup actions.
+    """
     def __init__(self, fixture, test_obj):
         self.fixture = fixture
         self.test_obj = test_obj
@@ -127,7 +140,10 @@ class TestCaseWrapper(core._TestObject):
             
 
 class FixtureIterator:
-
+    """
+    Iterator for executing setup, cleanup and reset actions in correct order
+    with the testcases.
+    """
     def __init__(self, fixture):
         self.fixture = fixture
 
@@ -153,24 +169,23 @@ class FixtureIterator:
 
 
 def test(func):
-    """Make a single function part of the test suite."""
+    """
+    Make a single function part of the test suite.
+    """
     module_path = os.path.abspath(inspect.getsourcefile(func))
     testcase = CaptureErrors(func)
     core.collect_test(module_path, testcase)
     return testcase
 
 
-def create_fixture(func):
-    globals_ = func.__globals__
-    obj = core.call_with_resources(func)
-    if not isinstance(obj, Fixture):
-        ifno = '@create_fixture excpects a callable that retruns a Fixture object'
-        raise ValueError(info)
-    
-    globals_['fixture'] = obj
-
-
 def raises(callable, params, exc_type):
+    """
+    Return True if provided callable raises an exception of type exc_type with
+    the given arguments. All other exception types will be raised normally.
+    
+    Params must be a tuple or a dict. If a dict object is given, they are
+    passed as keyword arguments.
+    """
     if not inspect.isclass(exc_type):
         raise TypeError('Argument exc_type was not a class.')
 
@@ -185,6 +200,10 @@ def raises(callable, params, exc_type):
 
 
 class Patch:
+    """
+    Dynamically replace an attribute from the given object with the
+    new object. Use as a context manager.
+    """
     def __init__(self, obj, attr, new):
         object.__setattr__(self, 'in_context', False)
         self.obj = obj
@@ -230,35 +249,21 @@ def patch(obj, attr, new):
     return Patch(obj, attr, new)
 
 
-class PatchObject:
-
-    def __init__(self, items):
-        object.__setattr__(self, '__items__', items)
-
-    def __setattr__(self, attr, value):
-        items = object.__getattribute__(self, '__items__')
-        items[attr] = value
-
-    def __getattribute__(self, attr):
-        items = object.__getattribute__(self, '__items__')
-        if attr not in self:
-            raise AttributeError(f'No such attribute "{attr}"')
-        return items[attr]
-
-    def __contains__(self, item):
-        items = object.__getattribute__(self, '__items__')
-        return item in items.keys()
-
-
 def resource(func):
     obj = core.call_with_resources(func)
     core.add_resource(func.__name__, obj)
 
 
 def utility(obj, *, name=None):
+    """
+    Mark the wrapped object as a utility.
+    These are injected into the function namespace
+    during test execution.
+    """
     if name is None:
         name = obj.__name__
     core.add_utility(name, obj)
+    return obj
 
 
 def add_resource(name, obj):
@@ -270,10 +275,22 @@ def on_exit(func):
 
 
 def call(func):
+    """
+    Call the function during module exection if microtest is running
+    or doing configuration.
+    """
     if core.running or core.config_in_process:
         core.call_with_resources(func)
     return func
 
 
 def abort():
+    """
+    Set the abort flag.
+    This is checked after the module is executed and before
+    any tests are executed.
+
+    Cleared after every module executed.
+    """
     core.abort = True
+

@@ -18,10 +18,9 @@ class Output:
 
 @dataclass
 class Colors:
-    #linux, mac
-    OK_GREEN = '\033[92m'
-    FAILED_RED = '\033[91m'
-    INFO_CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    CYAN = '\033[96m'
     RESET = '\033[0m'
 
     if sys.platform.startswith('win'):
@@ -36,7 +35,7 @@ class Colors:
             sys.stderr.write(info)
 
             input('Press ENTER to continue... ')
-            OK_GREEN = FAILED_RED = INFO_CYAN = RESET = ''
+            GREEN = RED = CYAN = RESET = ''
 
 
 @dataclass
