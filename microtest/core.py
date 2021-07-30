@@ -2,7 +2,6 @@
 Stateful component of microtest.
 
 Author: Valtteri Rajalainen
-Edited: 23.6.2021
 """
 
 import timeit

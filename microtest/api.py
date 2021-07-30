@@ -2,7 +2,6 @@
 The user API.
 
 Author: Valtteri Rajalainen
-Edited: 23.6.2021
 """
 
 import os
