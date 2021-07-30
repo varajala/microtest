@@ -2,7 +2,6 @@
 Common objects used across different modules.
 
 Author: Valtteri Rajalainen
-Edited: 23.6.2021
 """
 
 from dataclasses import dataclass
@@ -38,7 +37,6 @@ class Module:
     tests = dict()
 
 
-
 class Namespace:
     def __init__(self):
         object.__setattr__(self, 'data', dict())
@@ -66,5 +64,5 @@ class ExecutionContext:
 
     def __exit__(self, exc_type, exc, tb):
         if self.on_exit:
-            for item in self.on_exit:
-                item(exc_type, exc, tb)
+            for func in self.on_exit:
+                func(exc_type, exc, tb)

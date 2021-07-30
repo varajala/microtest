@@ -2,7 +2,6 @@
 Functions for resolving statement values in AssertionErrors.
 
 Author: Valtteri Rajalainen
-Edited: 23.6.2021
 """
 
 import re

@@ -1,6 +1,5 @@
 """
 Author: Valtteri Rajalainen
-Edited: 23.6.2021
 """
 
 import os
@@ -16,13 +15,13 @@ from microtest.api import *
 import microtest.api
 
 
-__all__ = ['context', 'run'] + microtest.api.__all__
+ENTRYPOINT = 'main.py'
+
+__all__ = microtest.api.__all__
 
 context = Namespace()
 exec_name = 'microtest_runner'
 core.logger = DefaultLogger()
-
-ENTRYPOINT = 'main.py'
 
 
 def run_from_commandline(args):

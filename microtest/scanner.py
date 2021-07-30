@@ -2,7 +2,6 @@
 BFS for the test modules from the given root path.
 
 Author: Valtteri Rajalainen
-Edited: 3.5.2021
 """
 
 import os

@@ -2,7 +2,6 @@
 Commandline entrypoint for testing.
 
 Author: Valtteri Rajalainen
-Edited: 26.5.2021
 """
 
 import sys
