@@ -49,25 +49,25 @@ class Result:
 class Module:
     path: str
     logged: bool = False
-    tests = dict()
+    tests = list()
 
 
 class Namespace:
-    def __init__(self):
-        object.__setattr__(self, 'data', dict())
+    def __init__(self, items=dict()):
+        object.__setattr__(self, 'items', items)
 
     def __getattribute__(self, attr):
-        data = object.__getattribute__(self, 'data')
+        items = object.__getattribute__(self, 'items')
         if attr not in self:
             raise AttributeError(f'No memeber "{attr}" in namespace')
-        return data[attr]
+        return items[attr]
 
     def __setattr__(self, attr, value):
-        object.__getattribute__(self, 'data').__setitem__(attr, value)
+        object.__getattribute__(self, 'items').__setitem__(attr, value)
 
     def __contains__(self, item):
-        data = object.__getattribute__(self, 'data')
-        return item in data.keys()
+        items = object.__getattribute__(self, 'items')
+        return item in items.keys()
 
 
 class ExecutionContext:

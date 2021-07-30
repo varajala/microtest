@@ -27,6 +27,9 @@ tests: int = 0
 t_start: float = None
 t_end: float = None
 
+exclude_groups = set()
+include_groups = set()
+
 abort = False
 
 
@@ -52,6 +55,7 @@ class Logger:
 class _TestObject:
     def __init__(self, test_func):
         self.func = test_func
+        self.group = None
     
     def __getattribute__(self, attr):
         try:
@@ -105,6 +109,12 @@ def filter_tests(namespace):
     Find testcases and possible Fixture inside the module namespace.
     """
     tests = [ item for item in namespace.values() if issubclass(type(item), _TestObject) ]
+    
+    if include_groups:
+        tests = list(filter(lambda test: test.group in include_groups, tests))
+    elif exclude_groups:
+        tests = list(filter(lambda test: test.group not in exclude_groups, tests))
+
     for item in namespace.values():
         if issubclass(type(item), _FixtureObject):
             item.testcases = tests
@@ -121,7 +131,6 @@ def collect_test(module_path, test_obj):
             logger.log_module_info(module_path)
             module.logged = True
     
-    module.tests = filter_tests(test_obj.func.__globals__)
     module.tests.append(test_obj)
 
 
@@ -174,7 +183,8 @@ def exec_modules(module_paths, exec_name):
                 module.logged = True
             
             try:
-                runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
+                namespace = runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
+                module.tests = filter_tests(namespace)
                 if abort:
                     abort = False
                     continue
@@ -215,7 +225,11 @@ def run_current_module():
             return
 
         module = modules_list.pop(0)
-        for test in module.tests:
+        if not module.tests:
+            return
+        
+        namespace = module.tests[0].func.__globals__
+        for test in filter_tests(namespace):
             error = call_with_resources(test)
             register_test_results(module.path, test, error)
 

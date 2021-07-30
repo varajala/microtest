@@ -16,15 +16,16 @@ __all__ = [
     'utility',
     'on_exit',
     'call',
-    'create_fixture',
-    'abort',
+    'group',
     
+    'abort',
     'raises',
     'patch',
     'add_resource',
+    'only_groups',
+    'exclude_groups',
     
     'Fixture',
-    'PatchObject',
     ]
 
 
@@ -294,3 +295,19 @@ def abort():
     """
     core.abort = True
 
+
+def group(name):
+    def wrapper(test_obj):
+        test_obj.group = name
+        return test_obj
+    return wrapper
+
+
+def exclude_groups(*args):
+    for name in args:
+        core.exclude_groups.add(name)
+
+
+def only_groups(*args):
+    for name in args:
+        core.include_groups.add(name)
