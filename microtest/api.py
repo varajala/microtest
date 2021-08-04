@@ -118,6 +118,7 @@ class Fixture(core._FixtureObject):
 
 
     def abort_with_error(self, error, info):
+        self.error = error
         if self._cleanup:
             cleanup_error = core.call_with_resources(self._cleanup)
             if cleanup_error:
@@ -178,6 +179,9 @@ class FixtureIterator:
                     return
             fixture.setup_done = True
         
+        if fixture.error:
+            raise StopIteration
+
         if fixture.testcases:
             test_obj = fixture.testcases.pop(0)
             return TestCaseWrapper(self.fixture, test_obj)
