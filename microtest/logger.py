@@ -18,12 +18,19 @@ from microtest.core import Logger
 
 class DefaultLogger(Logger):
     
+    MAX_WIDTH = 120
+    MIN_WIDTH = 60
+    DEFAULT_WIDTH = 75
+
     def __init__(self, output_mode=Output.DEFAULT, out: io.StringIO = sys.stdout):
         self.mode = output_mode
         self.out = out
-        self.width = 75
+        self.width = self.DEFAULT_WIDTH
+        
         if out.isatty():
             self.use_colors = True
+            cols, _ = os.get_terminal_size()
+            self.width = max(self.MIN_WIDTH, min(cols, self.MAX_WIDTH))
 
 
     def write_out(self, text, color=None):
@@ -59,10 +66,10 @@ class DefaultLogger(Logger):
 
     def log_test_info(self, func_name, result, exc):
         self.write_out(func_name)
-        padding = self.width - len(func_name) - len(result)
+        padding = self.width - len(func_name) - len(result) - 3
         self.write_out(' ' + padding * '.' + ' ')
         color = Colors.GREEN if result == Result.OK else Colors.RED
-        self.write_out(result + '    \n', color)
+        self.write_out(result + '\n', color)
 
         if result == Result.FAILED:
             tb = exc.__traceback__

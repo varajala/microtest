@@ -91,7 +91,6 @@ def generate_signature(obj):
         func_obj = obj.func
 
     if func_obj is None:
-        print(obj, obj.__class__)
         info = 'Cannot generate signature for object that is not '
         info += 'a function or microtest.core._FuncWrapper subclass instance.'
         raise TypeError(info)
