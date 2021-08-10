@@ -74,6 +74,12 @@ class ExecutionContext:
     def __init__(self):
         self.on_exit = list()
 
+    def add_cleanup_operation(self, func, *, final=False):
+        if not final:
+            self.on_exit.insert(0, func)
+        else:
+            self.on_exit.append(func)
+
     def __enter__(self):
         return self
 

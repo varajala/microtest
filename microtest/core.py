@@ -133,10 +133,10 @@ def add_utility(name, obj):
 
 
 def on_exit(func):
-    exec_context.on_exit.insert(0, func)
+    exec_context.add_cleanup_operation(func)
 
 
-def while_running(func):
+def require_init(func):
     """
     Wrapper function to ensure proper initialization before execution.
     """
@@ -212,10 +212,10 @@ def initialize():
     global running, t_start
     check_logger_object(logger)
     
+    running = True
     logger.log_start_info()
     t_start = timeit.default_timer()
-    exec_context.on_exit.append(stop_testing)
-    running = True
+    exec_context.add_cleanup_operation(stop_testing, final=True)
 
 
 def stop_testing(*args):
@@ -242,7 +242,7 @@ def collect_test(module_path, test_obj):
     module.tests.append(test_obj)
 
 
-@while_running
+@require_init
 def register_test_results(module_path, func, exc):
     global failed, errors, tests
     result = Result.OK
@@ -262,14 +262,14 @@ def register_test_results(module_path, func, exc):
     logger.log_test_info(func.__qualname__, result, exc)
 
 
-@while_running
+@require_init
 def register_module_exec_error(module_path, exc_type, exc, tb):
     global errors, init, t_start
     errors += 1
     logger.log_module_exec_error(module_path, exc_type, exc, tb)
 
 
-@while_running
+@require_init
 def exec_modules(module_paths, exec_name):
     global abort
     with exec_context:

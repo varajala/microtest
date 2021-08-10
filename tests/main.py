@@ -26,7 +26,6 @@ import microtest
 
 microtest.exec_name = '__main__'
 
-
 microtest.exclude_modules('fixture_error_test')
 
 
