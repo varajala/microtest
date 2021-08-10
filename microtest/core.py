@@ -40,23 +40,14 @@ included_groups = set()
 abort = False
 
 
-class Logger:
-
-    required_methods = (
-        'log_start_info',
-        'log_module_info',
-        'log_test_info',
-        'log_module_exec_error',
-        'log_results',
-        'terminate',
+logger_interface = (
+    ('log_start_info', list()),
+    ('log_module_info', ['module_path']),
+    ('log_test_info', ['name', 'result', 'exc']),
+    ('log_module_exec_error', ['module_path', 'exc_type', 'exc', 'tb']),
+    ('log_results', ['tests', 'failed', 'errors', 'time']),
+    ('terminate', list())
     )
-
-    def __init_subclass__(cls):
-        object.__init_subclass__()
-        cls_members = [ member for member in dir(cls) if not member.startswith('_') ]
-        for method_name in Logger.required_methods:
-            if method_name not in cls_members:
-                raise TypeError(f'Invalid Logger implementation. Missing method "{method_name}"')
 
 
 class _FixtureObject:
@@ -84,7 +75,7 @@ class _TestObject(_FuncWrapper):
 
 def generate_signature(obj):
     func_obj = None
-    if inspect.isfunction(obj):
+    if inspect.isfunction(obj) or inspect.ismethod(obj):
         func_obj = obj
 
     if issubclass(obj.__class__, _FuncWrapper):
@@ -92,11 +83,35 @@ def generate_signature(obj):
 
     if func_obj is None:
         info = 'Cannot generate signature for object that is not '
-        info += 'a function or microtest.core._FuncWrapper subclass instance.'
+        info += 'a function, method or microtest.core._FuncWrapper subclass instance.'
         raise TypeError(info)
     
     signature = inspect.signature(func_obj)
     return [ param for param in signature.parameters ]
+
+
+def check_logger_object(obj: object):
+    for requirement in logger_interface:
+        method_name, signature = requirement
+        if not hasattr(obj, method_name):
+            info = f'Invalid Logger implementation: Expected Logger to have attribute "{method_name}"'
+            raise TypeError(info)
+        
+        method_obj = getattr(obj, method_name)
+        if not hasattr(method_obj, '__call__'):
+            info = f'Invalid Logger implementation: Attribute "{method_name}" is not callable'
+            raise TypeError(info)
+        
+        method_obj_signature = generate_signature(method_obj)
+        if method_obj_signature != signature:
+            info = ''.join([
+                'Invalid Logger implementation: ',
+                f'Signature of "{method_name}" doesn\'t match the interface requirement.\n\n',
+                f'{method_obj_signature} != {signature}'
+                ])
+            raise TypeError(info)
+    
+    return True
     
 
 def call_with_resources(func):
@@ -195,9 +210,7 @@ def filter_modules(modules: tuple) -> tuple:
 
 def initialize():
     global running, t_start
-    if logger is None or not issubclass(type(logger), Logger):
-        info = 'Invalid configuration. No logger or invalid logger interface'
-        raise ValueError(info)
+    check_logger_object(logger)
     
     logger.log_start_info()
     t_start = timeit.default_timer()

@@ -1,15 +1,38 @@
 import microtest
 
 
+# class TestLogger:
+    
+#     def log_start_info(self):
+#         pass
+
+#     def log_test_info(self, name, result, exc):
+#         pass
+
+#     def log_module_exec_error(self, module_path, exc_type, exc, tb):
+#         pass
+
+#     def log_module_info(self, module_path):
+#         pass
+    
+#     def log_results(self, tests, failed, errors, time):
+#         pass
+
+#     def terminate(self):
+#         pass
+
+# microtest.set_logger(TestLogger())
+
+
 microtest.exec_name = '__main__'
 
-#microtest.only_modules('assertion')
+
 microtest.exclude_modules('fixture_error_test')
 
 
 @microtest.on_exit
 def teardown(exc_type, exc, tb):
-    print('exit...')
+    print('\n  [ EXIT ]')
 
 
 @microtest.resource
@@ -33,3 +56,5 @@ def init_func(data, more_data):
     assert more_data is not None
     microtest.utility('foo', name='foo')
     assert microtest.core.running == False
+
+    print('\n  [ START ]  \n')

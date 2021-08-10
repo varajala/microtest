@@ -13,10 +13,8 @@ import io
 import microtest.assertion as assertion
 
 from microtest.data import *
-from microtest.core import Logger
 
-
-class DefaultLogger(Logger):
+class DefaultLogger:
     
     MAX_WIDTH = 120
     MIN_WIDTH = 60
@@ -64,9 +62,9 @@ class DefaultLogger(Logger):
         self.write_separator('=')
 
 
-    def log_test_info(self, func_name, result, exc):
-        self.write_out(func_name)
-        padding = self.width - len(func_name) - len(result) - 3
+    def log_test_info(self, name, result, exc):
+        self.write_out(name)
+        padding = self.width - len(name) - len(result) - 3
         self.write_out(' ' + padding * '.' + ' ')
         color = Colors.GREEN if result == Result.OK else Colors.RED
         self.write_out(result + '\n', color)
