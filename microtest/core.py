@@ -8,6 +8,7 @@ import timeit
 import inspect
 import runpy
 import os
+import sys
 
 from typing import Iterable
 
@@ -135,6 +136,12 @@ def while_running(func):
 def filter_tests(namespace: dict) -> Iterable:
     """
     Find testcases and possible Fixture inside the module namespace.
+    Filter the found testcases based on their group.
+
+    If included_groups is not empty only those groups will be executed,
+    even if exclude_groups is not empty.
+    
+    If exclude_groups is not empty these groups will be filtered out.
     """
     tests = [ item for item in namespace.values() if issubclass(type(item), _TestObject) ]
     
@@ -151,6 +158,18 @@ def filter_tests(namespace: dict) -> Iterable:
 
 
 def filter_modules(modules: tuple) -> tuple:
+    """
+    Filter the executed modules based on inlcuded_modules and exclude_modules.
+
+    These sets can contain restrictions as strings representing filepaths or parts of filepaths.
+    If the restriction is an absolute filepath the paths are comapred with '=='.
+    Otherwise the comaprison will be 'restriction in path' (path is an absolute filepath).
+
+    If included_modules is not empty only those modules will be executed,
+    even if exclude_modules is not empty.
+    
+    If exclude_modules is not empty these modules will be filtered out.
+    """
     filtered_modules = list(modules)
 
     def path_meets_restriction(module_path: str, restriction: str) -> bool:
