@@ -26,6 +26,9 @@ __all__ = [
     
     'add_resource',
     
+    'only_modules',
+    'exclude_modules',
+
     'only_groups',
     'exclude_groups',
     
