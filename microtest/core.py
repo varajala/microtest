@@ -27,8 +27,11 @@ tests: int = 0
 t_start: float = None
 t_end: float = None
 
+exclude_modules = set()
+included_modules = set()
+
 exclude_groups = set()
-include_groups = set()
+included_groups = set()
 
 abort = False
 
@@ -52,22 +55,27 @@ class Logger:
                 raise TypeError(f'Invalid Logger implementation. Missing method "{method_name}"')
 
 
-class _TestObject:
-    def __init__(self, test_func, module_path):
-        self.func = test_func
-        self.module_path = module_path
-        self.group = None
-    
+class _FixtureObject:
+    pass
+
+
+class _FuncWrapper:
+    def __init__(self, func):
+        self.func = func
+
     def __getattribute__(self, attr):
         try:
             return object.__getattribute__(self, attr)
         except AttributeError:
             func = object.__getattribute__(self, 'func')
             return object.__getattribute__(func, attr)
-            
 
-class _FixtureObject:
-    pass
+
+class _TestObject(_FuncWrapper):
+    def __init__(self, func, module_path):
+        super().__init__(func)
+        self.module_path = module_path
+        self.group = None
 
 
 def while_running(func):
@@ -111,8 +119,8 @@ def filter_tests(namespace):
     """
     tests = [ item for item in namespace.values() if issubclass(type(item), _TestObject) ]
     
-    if include_groups:
-        tests = list(filter(lambda test: test.group in include_groups, tests))
+    if included_groups:
+        tests = list(filter(lambda test: test.group in included_groups, tests))
     elif exclude_groups:
         tests = list(filter(lambda test: test.group not in exclude_groups, tests))
 
@@ -238,12 +246,13 @@ def generate_signature(obj):
     if inspect.isfunction(obj):
         func_obj = obj
 
-    if issubclass(obj.__class__, _TestObject):
+    if issubclass(obj.__class__, _FuncWrapper):
         func_obj = obj.func
 
     if func_obj is None:
+        print(obj, obj.__class__)
         info = 'Cannot generate signature for object that is not '
-        info += 'a function or microtest.core._TestObject subclass instance.'
+        info += 'a function or microtest.core._FuncWrapper subclass instance.'
         raise TypeError(info)
     
     signature = inspect.signature(func_obj)

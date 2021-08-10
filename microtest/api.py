@@ -23,55 +23,14 @@ __all__ = [
     'abort',
     'raises',
     'patch',
+    
     'add_resource',
+    
     'only_groups',
     'exclude_groups',
     
     'Fixture',
     ]
-
-
-class CaptureErrors(core._TestObject):
-    """
-    A simple wrapper object for caputring exceptions.
-    Returns the raised exception instance or None if no exceptions were raised.
-
-    Is a subclass of core._TestObject (core will reckognize this as a testcase).
-    """
-    def __init__(self, func, module_path):
-        super().__init__(func, module_path)
-    
-    def __call__(self, *args, **kwargs):
-        error = None
-        try:
-            self.func(*args, **kwargs)
-        except Exception as exc:
-            error = exc
-        
-        core.register_test_results(self.module_path, self, error)
-        return error
-
-
-class CombinedError(Exception):
-    def __init__(self, *, info, last_raised, during=None):
-        super().__init__(self)
-        self.__traceback__ = last_raised.__traceback__
-        self.info = info
-        self.last_raised = last_raised
-        self.during = during
-
-    def __str__(self):
-        parts = [
-            f'\n\n{self.info}:\n',
-        ]
-        if self.during:
-            tb = ''.join(traceback.format_exception(type(self.during), self.during, self.during.__traceback__))
-            parts.append(tb)
-            parts.append('While handling the exception above another error occured:\n')
-
-        tb = ''.join(traceback.format_exception(type(self.last_raised), self.last_raised, self.__traceback__))
-        parts.append(tb)
-        return '\n'.join(parts).rstrip()
 
 
 def capture_exception(func):
@@ -86,15 +45,30 @@ def capture_exception(func):
     return wrapper
 
 
+class SimpleTestCase(core._TestObject):
+    
+    def __call__(self, *args, **kwargs):
+        error = None
+        try:
+            self.func(*args, **kwargs)
+        
+        except Exception as exc:
+            error = exc
+        
+        core.register_test_results(self.module_path, self, error)
+        return error
+
+
 class Fixture(core._FixtureObject):
 
     def __init__(self, *, reset = None, setup = None, cleanup = None):
-        self.setup_done = False
-        self.testcases = list()
-        self.error = None
         self._setup = setup
         self._cleanup = cleanup
         self._reset = reset
+        
+        self.setup_done = False
+        self.testcases = list()
+        self.error = None
 
 
     def append(self, test):
@@ -114,82 +88,54 @@ class Fixture(core._FixtureObject):
 
 
     def __iter__(self):
-        return FixtureIterator(self)
+        return self
 
-
-    def abort_with_error(self, error, info):
-        self.error = error
-        if self._cleanup:
-            cleanup_error = core.call_with_resources(self._cleanup)
-            if cleanup_error:
-                raise CombinedError(info = info, last_raised = cleanup_error, during = error)
-        raise CombinedError(info = info, last_raised = error)
-
-
-class TestCaseWrapper(core._TestObject):
-    """
-    Wrapper object used inside fixtures to capture errors and
-    execute possible cleanup actions. Wraps the CaptureErrors wrapper object.
-
-    Returns an exception instance if one or more exceptions are raised
-    during execution and cleanup actions.
-    """
-    def __init__(self, fixture, test_obj):
-        self.fixture = fixture
-        self.test_obj = test_obj
-        core._TestObject.__init__(self, test_obj.func, test_obj.module_path)
-
-    def __call__(self, **kwargs):
-        fixture = self.fixture
-
-        if fixture._reset:
-            error = core.call_with_resources(fixture._reset)
-            if error:
-                info = 'An error occured while performing reset actions'
-                self.fixture.abort_with_error(error, info)
-                return
-        
-        exc = self.test_obj(**kwargs)
-        if exc:
-            fixture.error = exc
-            if fixture._cleanup:
-                error = core.call_with_resources(fixture._cleanup)
-                if error:
-                    info = f'An error occurred while executing function "{self.func.__qualname__}"'
-                    return CombinedError(info = info, last_raised = error, during = exc)
-        return exc
-            
-
-class FixtureIterator:
-    """
-    Iterator for executing setup, cleanup and reset actions in correct order
-    with the testcases.
-    """
-    def __init__(self, fixture):
-        self.fixture = fixture
 
     def __next__(self):
-        fixture = self.fixture
-        if not fixture.setup_done:
-            if fixture._setup:
-                error = core.call_with_resources(fixture._setup)
-                if error:
-                    info = 'Fixture setup failed'
-                    self.fixture.abort_with_error(error, info)
-                    return
-            fixture.setup_done = True
+        if not self.setup_done:
+            self.do_setup()
         
-        if fixture.error:
+        if self.error:
             raise StopIteration
 
-        if fixture.testcases:
-            test_obj = fixture.testcases.pop(0)
-            return TestCaseWrapper(self.fixture, test_obj)
+        if self.testcases:
+            return self.wrap_test(self.testcases.pop(0))
         
-        if fixture._cleanup and not fixture.error:
-            core.call_with_resources(fixture._cleanup)
+        self.do_cleanup()
         raise StopIteration
 
+
+    def wrap_test(self, func):
+        @functools.wraps(func)
+        def wrapper(**kwargs):
+            if self._reset:
+                error = core.call_with_resources(self._reset)
+                if error:
+                    self.abort_with_error(error)
+            return func(**kwargs)
+        return wrapper
+
+
+    def do_setup(self):
+        self.setup_done = True
+        if self._setup:
+            error = core.call_with_resources(self._setup)
+            if error:
+                self.abort_with_error(error)
+
+
+    def do_cleanup(self):
+        if self._cleanup:
+            error = core.call_with_resources(self._cleanup)
+            if error:
+                self.abort_with_error(error, do_cleanup=False)
+
+    
+    def abort_with_error(self, error, *, do_cleanup=True):
+        self.error = error
+        if do_cleanup:
+            self.do_cleanup()
+        raise error
 
 
 def test(func):
@@ -197,7 +143,7 @@ def test(func):
     Make a single function part of the test suite.
     """
     module_path = os.path.abspath(inspect.getsourcefile(func))
-    testcase = CaptureErrors(func, module_path)
+    testcase = SimpleTestCase(func, module_path)
     core.collect_test(module_path, testcase)
     return testcase
 
@@ -333,7 +279,18 @@ def exclude_groups(*args):
 
 def only_groups(*args):
     for name in args:
-        core.include_groups.add(name)
+        core.included_groups.add(name)
+
+
+def exclude_modules(*args):
+    for name in args:
+        core.exclude_modules.add(name)
+
+
+def only_modules(*args):
+    for name in args:
+        core.included_modules.add(name)
+
 
 def run():
     core.run_current_module()
