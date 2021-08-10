@@ -169,12 +169,11 @@ def filter_modules(modules: tuple) -> tuple:
     
     If exclude_modules is not empty these modules will be filtered out.
     """
-    filtered_modules = list(modules)
-
     def path_meets_restriction(module_path: str, restriction: str) -> bool:
         if os.path.isabs(restriction):
             return module_path == restriction
         return restriction in module_path
+    
 
     if included_modules:
         filtered_modules = list()
@@ -182,12 +181,14 @@ def filter_modules(modules: tuple) -> tuple:
             for module_path in modules:
                 if path_meets_restriction(module_path, restriction):
                     filtered_modules.append(module_path)
+        return tuple(filtered_modules)
     
-    elif exclude_modules:
-        for restriction in exclude_modules:
-            for module_path in modules:
-                if not path_meets_restriction(module_path, restriction):
-                    filtered_modules.append(module_path)
+    filtered_modules = list(modules)
+    
+    for restriction in exclude_modules:
+        for index, module_path in enumerate(modules):
+            if path_meets_restriction(module_path, restriction):
+                filtered_modules.pop(index)
     
     return tuple(filtered_modules)
 
@@ -303,8 +304,22 @@ def run_current_module():
             return
         
         namespace = module.tests[0].func.__globals__
-        for test in filter_tests(namespace):
-            call_with_resources(test)
+
+        try:
+            for test in filter_tests(namespace):
+                call_with_resources(test)
+        
+        except KeyboardInterrupt:
+            return
+
+        except SystemExit:
+            return
+
+        except Exception as exc:
+            exc_type = type(exc)
+            traceback = exc.__traceback__
+            register_module_exec_error(module.path, exc_type, exc, traceback)
+            return
 
 
 def run_config(path, exec_name):
