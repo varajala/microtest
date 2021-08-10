@@ -27,6 +27,7 @@ import microtest
 microtest.exec_name = '__main__'
 
 microtest.exclude_modules('fixture_error_test')
+#microtest.set_module_discovery_regex('.*test.py')
 
 
 @microtest.on_exit

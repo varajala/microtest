@@ -22,6 +22,10 @@ def set_logger(obj):
     core.logger = obj
 
 
+def set_module_discovery_regex(regex):
+    scanner.test_module_regex = regex
+
+
 context = Namespace()
 exec_name = 'microtest_runner'
 set_logger(DefaultLogger())
@@ -44,14 +48,9 @@ def run_from_commandline(args):
         core.exec_modules((path,), exec_name)
         return
 
-    modules = scanner.find_tests(path)
-    if not modules:
-        sys.stdout.write(f'No modules found.\n')
-        return
-
     entrypoint = os.environ.get('MICROTEST_ENTRYPOINT', 'main.py')
     if entrypoint in os.listdir(path):
         core.run_config(os.path.join(path, entrypoint), exec_name)
 
-    core.exec_modules(modules, exec_name)
+    core.exec_modules(scanner.find_tests(path), exec_name)
 
