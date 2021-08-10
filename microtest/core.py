@@ -151,7 +151,7 @@ def filter_tests(namespace: dict) -> Iterable:
 
 
 def filter_modules(modules: tuple) -> tuple:
-    filtered_modules = list()
+    filtered_modules = list(modules)
 
     def path_meets_restriction(module_path: str, restriction: str) -> bool:
         if os.path.isabs(restriction):
@@ -159,16 +159,17 @@ def filter_modules(modules: tuple) -> tuple:
         return restriction in module_path
 
     if included_modules:
+        filtered_modules = list()
         for restriction in included_modules:
             for module_path in modules:
                 if path_meets_restriction(module_path, restriction):
-                    filtered_tests.append(module_path)
+                    filtered_modules.append(module_path)
     
     elif exclude_modules:
-        for restriction in included_modules:
+        for restriction in exclude_modules:
             for module_path in modules:
                 if not path_meets_restriction(module_path, restriction):
-                    filtered_tests.append(module_path)
+                    filtered_modules.append(module_path)
     
     return tuple(filtered_modules)
 
