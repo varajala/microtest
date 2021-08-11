@@ -297,9 +297,11 @@ def filter_modules(modules: tuple) -> tuple:
     filtered_modules = list(modules)
     
     for restriction in exclude_modules:
+        removed = 0
         for index, module_path in enumerate(modules):
             if path_meets_restriction(module_path, restriction):
-                filtered_modules.pop(index)
+                filtered_modules.pop(index - removed)
+                removed += 1
     
     return tuple(filtered_modules)
 
