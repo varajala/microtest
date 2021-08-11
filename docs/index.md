@@ -10,21 +10,7 @@
 - [Other Features](#./other-features.md)
 - [Customizing](#./customizing.md)
 
-## Basic use
-Here is the most basic test scenario using microtest:
 
-```python
-import microtest
-
-
-@microtest.test
-def test_func():
-    assert 10 > 0
-    
-
-if __name__ == '__main__':
-    microtest.run()
-```
 The **test**-decorator tells microtest to run the function *test_func* as a part of the test suite and check its result.
 The **run**-function inside the *__name__ == '__main__'*-condition will execute the tests collected from the module and output their results.
 

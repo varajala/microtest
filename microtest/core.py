@@ -162,7 +162,7 @@ class Fixture:
         if self._setup:
             error = call_with_resources(self._setup)
             if error:
-                self.abort_with_error(error)
+                self.abort_with_error(error, do_cleanup=False)
 
 
     def do_cleanup(self):

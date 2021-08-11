@@ -23,4 +23,4 @@ def test():
 
 if __name__ == '__main__':
     microtest.run()
-    assert cleanup_called
+    assert not cleanup_called
