@@ -43,7 +43,7 @@ class DefaultLogger:
 
 
     def format_separator(self, char: str, separation = 1):
-        return (self.width // separation) * char
+        return (self.width // separation) * char + '\n'
 
 
     def format_traceback(self, exc_type, exc, tb):
@@ -53,7 +53,7 @@ class DefaultLogger:
 
     def log_start_info(self):
         self.write(self.format_separator('='))
-        self.write('\nStarted testing...\n')
+        self.write('Started testing...\n')
         self.write(self.format_separator('='))
 
 
@@ -87,7 +87,6 @@ class DefaultLogger:
 
     
     def log_results(self, tests, failed, errors, time):
-        self.write('\n')
         self.write(self.format_separator('-'))
         self.write(f'\nRan {tests} tests in {time}s.\n\n')
 
