@@ -1,13 +1,10 @@
 import microtest
 
 
-fixture = microtest.Fixture()
-
-
 variable = 1
 
 
-@fixture.cleanup
+@microtest.cleanup
 def cleanup():
     global variable
     variable = 0

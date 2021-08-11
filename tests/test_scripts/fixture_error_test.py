@@ -1,16 +1,15 @@
 import microtest
 
 
-fixture = microtest.Fixture()
 cleanup_called = False
 
 
-@fixture.setup
+@microtest.setup
 def setup_func():
     raise RuntimeError
 
 
-@fixture.cleanup
+@microtest.cleanup
 def cleanup_func():
     global cleanup_called
     cleanup_called = True

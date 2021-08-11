@@ -3,20 +3,17 @@ import microtest
 
 calls = []
 
-fixture = microtest.Fixture()
-
-
-@fixture.setup
+@microtest.setup
 def setup_func():
     calls.append('setup')
 
 
-@fixture.reset
+@microtest.reset
 def reset_func():
     calls.append('reset')
 
 
-@fixture.cleanup
+@microtest.cleanup
 def cleanup_func():
     calls.append('cleanup')
     assert calls == ['setup', 'reset', 'func1', 'reset', 'func2', 'reset', 'func3', 'cleanup']

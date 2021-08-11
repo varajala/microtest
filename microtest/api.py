@@ -13,6 +13,11 @@ import functools
 
 __all__ = [
     'test',
+    
+    'setup',
+    'reset',
+    'cleanup',
+
     'resource',
     'utility',
     'on_exit',
@@ -31,114 +36,7 @@ __all__ = [
 
     'only_groups',
     'exclude_groups',
-    
-    'Fixture',
     ]
-
-
-def capture_exception(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        error = None
-        try:
-            func(*args, **kwargs)
-        except Exception as exc:
-            error = exc
-        return error
-    return wrapper
-
-
-class SimpleTestCase(core._TestObject):
-    
-    def __call__(self, *args, **kwargs):
-        error = None
-        try:
-            self.func(*args, **kwargs)
-        
-        except Exception as exc:
-            error = exc
-        
-        core.register_test_results(self.module_path, self, error)
-        return error
-
-
-class Fixture(core._FixtureObject):
-
-    def __init__(self, *, reset = None, setup = None, cleanup = None):
-        self._setup = setup
-        self._cleanup = cleanup
-        self._reset = reset
-        
-        self.setup_done = False
-        self.testcases = list()
-        self.error = None
-
-
-    def append(self, test):
-        self.testcases.append(test)
-
-
-    def setup(self, func):
-        self._setup = capture_exception(func)
-
-
-    def cleanup(self, func):
-        self._cleanup = capture_exception(func)
-
-
-    def reset(self, func):
-        self._reset = capture_exception(func)
-
-
-    def __iter__(self):
-        return self
-
-
-    def __next__(self):
-        if not self.setup_done:
-            self.do_setup()
-        
-        if self.error:
-            raise StopIteration
-
-        if self.testcases:
-            return self.wrap_test(self.testcases.pop(0))
-        
-        self.do_cleanup()
-        raise StopIteration
-
-
-    def wrap_test(self, func):
-        @functools.wraps(func)
-        def wrapper(**kwargs):
-            if self._reset:
-                error = core.call_with_resources(self._reset)
-                if error:
-                    self.abort_with_error(error)
-            return func(**kwargs)
-        return wrapper
-
-
-    def do_setup(self):
-        self.setup_done = True
-        if self._setup:
-            error = core.call_with_resources(self._setup)
-            if error:
-                self.abort_with_error(error)
-
-
-    def do_cleanup(self):
-        if self._cleanup:
-            error = core.call_with_resources(self._cleanup)
-            if error:
-                self.abort_with_error(error, do_cleanup=False)
-
-    
-    def abort_with_error(self, error, *, do_cleanup=True):
-        self.error = error
-        if do_cleanup:
-            self.do_cleanup()
-        raise error
 
 
 def test(func):
@@ -146,9 +44,30 @@ def test(func):
     Make a single function part of the test suite.
     """
     module_path = os.path.abspath(inspect.getsourcefile(func))
-    testcase = SimpleTestCase(func, module_path)
+    testcase = core._TestObject(func, module_path)
     core.collect_test(module_path, testcase)
     return testcase
+
+
+def setup(func):
+    module_path = os.path.abspath(inspect.getsourcefile(func))
+    fixture = core.get_fixture(module_path)
+    fixture.register_setup(func)
+    return func
+
+
+def reset(func):
+    module_path = os.path.abspath(inspect.getsourcefile(func))
+    fixture = core.get_fixture(module_path)
+    fixture.register_reset(func)
+    return func
+
+
+def cleanup(func):
+    module_path = os.path.abspath(inspect.getsourcefile(func))
+    fixture = core.get_fixture(module_path)
+    fixture.register_cleanup(func)
+    return func
 
 
 def raises(callable, params, exc_type):

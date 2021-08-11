@@ -9,6 +9,7 @@ import inspect
 import runpy
 import os
 import sys
+import functools
 
 from typing import Iterable
 
@@ -50,27 +51,132 @@ logger_interface = (
     )
 
 
-class _FixtureObject:
-    pass
+def capture_exception(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        error = None
+        try:
+            func(*args, **kwargs)
+        except Exception as exc:
+            error = exc
+        return error
+    return wrapper
 
 
-class _FuncWrapper:
-    def __init__(self, func):
+class _TestObject:
+    def __init__(self, func, module_path):
         self.func = func
+        self.module_path = module_path
+        self.group = None
 
     def __getattribute__(self, attr):
         try:
             return object.__getattribute__(self, attr)
-        except AttributeError:
-            func = object.__getattribute__(self, 'func')
-            return object.__getattribute__(func, attr)
+        except AttributeError as err:
+            try:
+                func = object.__getattribute__(self, 'func')
+                return object.__getattribute__(func, attr)
+            except AttributeError:
+                raise err
+
+    def __call__(self, *args, **kwargs):
+        error = None
+        try:
+            self.func(*args, **kwargs)
+        
+        except Exception as exc:
+            error = exc
+        
+        register_test_results(self.module_path, self, error)
+        return error
 
 
-class _TestObject(_FuncWrapper):
-    def __init__(self, func, module_path):
-        super().__init__(func)
-        self.module_path = module_path
-        self.group = None
+class Fixture:
+
+    def __init__(self):
+        self._setup = None
+        self._cleanup = None
+        self._reset = None
+        
+        self.setup_done = False
+        self.tests = list()
+        self.error = None
+
+
+    def append(self, test):
+        self.tests.append(test)
+
+
+    def register_setup(self, func):
+        if self._setup:
+            info = 'Setup function is already set for this module'
+            raise RuntimeError()
+        self._setup = capture_exception(func)
+
+
+    def register_cleanup(self, func):
+        if self._cleanup:
+            info = 'Cleanup function is already set for this module'
+            raise RuntimeError()
+        self._cleanup = capture_exception(func)
+
+
+    def register_reset(self, func):
+        if self._reset:
+            info = 'Reset function is already set for this module'
+            raise RuntimeError()
+        self._reset = capture_exception(func)
+
+
+    def __iter__(self):
+        return self
+
+
+    def __next__(self):
+        if not self.setup_done:
+            self.do_setup()
+        
+        if self.error:
+            raise StopIteration
+
+        if self.tests:
+            return self.wrap_test(self.tests.pop(0))
+        
+        self.do_cleanup()
+        raise StopIteration
+
+
+    def wrap_test(self, func):
+        @functools.wraps(func)
+        def wrapper(**kwargs):
+            if self._reset:
+                error = call_with_resources(self._reset)
+                if error:
+                    self.abort_with_error(error)
+            return func(**kwargs)
+        return wrapper
+
+
+    def do_setup(self):
+        self.setup_done = True
+        if self._setup:
+            error = call_with_resources(self._setup)
+            if error:
+                self.abort_with_error(error)
+
+
+    def do_cleanup(self):
+        if self._cleanup:
+            error = call_with_resources(self._cleanup)
+            if error:
+                self.abort_with_error(error, do_cleanup=False)
+
+    
+    def abort_with_error(self, error, *, do_cleanup=True):
+        self.error = error
+        if do_cleanup:
+            self.do_cleanup()
+        raise error
 
 
 def generate_signature(obj):
@@ -78,12 +184,12 @@ def generate_signature(obj):
     if inspect.isfunction(obj) or inspect.ismethod(obj):
         func_obj = obj
 
-    if issubclass(obj.__class__, _FuncWrapper):
+    if isinstance(obj, _TestObject):
         func_obj = obj.func
 
     if func_obj is None:
         info = 'Cannot generate signature for object that is not '
-        info += 'a function, method or microtest.core._FuncWrapper subclass instance.'
+        info += 'a function, method or microtest.core._TestObject instance.'
         raise TypeError(info)
     
     signature = inspect.signature(func_obj)
@@ -147,27 +253,17 @@ def require_init(func):
     return wrapper
 
 
-def filter_tests(namespace: dict) -> Iterable:
-    """
-    Find testcases and possible Fixture inside the module namespace.
-    Filter the found testcases based on their group.
-
-    If included_groups is not empty only those groups will be executed,
-    even if exclude_groups is not empty.
-    
-    If exclude_groups is not empty these groups will be filtered out.
-    """
-    tests = [ item for item in namespace.values() if issubclass(type(item), _TestObject) ]
-    
+def filter_tests(module: Module) -> Iterable:
+    tests = module.tests.copy()
     if included_groups:
-        tests = list(filter(lambda test: test.group in included_groups, tests))
+        tests = list(filter(lambda test: test.group in included_groups, module.tests))
+    
     elif exclude_groups:
-        tests = list(filter(lambda test: test.group not in exclude_groups, tests))
+        tests = list(filter(lambda test: test.group not in exclude_groups, module.tests))
 
-    for item in namespace.values():
-        if issubclass(type(item), _FixtureObject):
-            item.testcases = tests
-            return item
+    if module.fixture:
+        module.fixture.tests = tests
+        return module.fixture
     return tests
 
 
@@ -233,13 +329,19 @@ def stop_testing(*args):
 def collect_test(module_path, test_obj):
     module = modules.get(module_path, None)
     if module is None:
-        module = Module(module_path)
-        modules[module_path] = module
-        if running:
-            logger.log_module_info(module_path)
-            module.logged = True
-    
+        module = modules[module_path] = Module(module_path)
     module.tests.append(test_obj)
+
+
+def get_fixture(module_path):
+    module = modules.get(module_path, None)
+    if module is None:
+        module = modules[module_path] = Module(module_path)
+    
+    if not module.fixture:
+        module.fixture = Fixture()
+    
+    return module.fixture
 
 
 @require_init
@@ -254,11 +356,6 @@ def register_test_results(module_path, func, exc):
         else:
             errors += 1
     
-    module = modules.get(module_path, None)
-    if module and not module.logged:
-        logger.log_module_info(module_path)
-        module.logged = True
-
     logger.log_test_info(func.__qualname__, result, exc)
 
 
@@ -274,19 +371,16 @@ def exec_modules(module_paths, exec_name):
     global abort
     with exec_context:
         for module_path in filter_modules(module_paths):
-            if module_path not in modules:
-                module = modules[module_path] = Module(module_path)
-                logger.log_module_info(module_path)
-                module.logged = True
+            module = modules[module_path] = Module(module_path)
+            logger.log_module_info(module_path)
             
             try:
-                namespace = runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
+                runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
                 if abort:
                     abort = False
                     continue
-                
-                module.tests = filter_tests(namespace)
-                for test in module.tests:
+
+                for test in filter_tests(module):
                     call_with_resources(test)
 
             except KeyboardInterrupt:
@@ -294,7 +388,7 @@ def exec_modules(module_paths, exec_name):
 
             except SystemExit:
                 break
-
+            
             except Exception as exc:
                 exc_type = type(exc)
                 traceback = exc.__traceback__
@@ -308,31 +402,24 @@ def run_current_module():
     initialize()
     
     with exec_context:
-        modules_list = list(modules.values())
-        if len(modules_list) == 0:
-            return
+        for module_path, module in modules.items():
+            logger.log_module_info(module_path)
 
-        module = modules_list.pop(0)
-        if not module.tests:
-            return
-        
-        namespace = module.tests[0].func.__globals__
+            try:
+                for test in filter_tests(module):
+                    call_with_resources(test)
+            
+            except KeyboardInterrupt:
+                return
 
-        try:
-            for test in filter_tests(namespace):
-                call_with_resources(test)
-        
-        except KeyboardInterrupt:
-            return
+            except SystemExit:
+                return
 
-        except SystemExit:
-            return
-
-        except Exception as exc:
-            exc_type = type(exc)
-            traceback = exc.__traceback__
-            register_module_exec_error(module.path, exc_type, exc, traceback)
-            return
+            except Exception as exc:
+                exc_type = type(exc)
+                traceback = exc.__traceback__
+                register_module_exec_error(module.path, exc_type, exc, traceback)
+                return
 
 
 def run_config(path, exec_name):

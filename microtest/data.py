@@ -45,11 +45,11 @@ class Result:
     ERROR = 'ERROR'
 
 
-@dataclass
 class Module:
-    path: str
-    logged: bool = False
-    tests = list()
+    def __init__(self, path: str):
+        self.path = path
+        self.tests = list()
+        self.fixture = None
 
 
 class Namespace:
