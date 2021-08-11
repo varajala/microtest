@@ -87,8 +87,9 @@ class DefaultLogger:
 
     
     def log_results(self, tests, failed, errors, time):
+        self.write('\n')
         self.write(self.format_separator('-'))
-        self.write(f'\nRan {tests} tests in {time}s.\n\n')
+        self.write(f'Ran {tests} tests in {time}s.\n\n')
 
         if errors == 0 and failed == 0:
             self.write('OK.\n\n', color = Colors.GREEN)
