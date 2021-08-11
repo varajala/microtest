@@ -1,5 +1,5 @@
 """
-Functions for resolving statement values in AssertionErrors.
+Functions for resolving variable values in AssertionError tracebacks.
 
 Author: Valtteri Rajalainen
 """
@@ -8,18 +8,20 @@ import re
 import io
 import traceback
 
+from typing import List, Tuple, Union, NewType
 
-operators = [
+
+OPERATORS = [
     'is', 'not', 'and', 'or', 'if', 'else',
     '==', '!=', '>', '<', '>=', '<=',
     ]
 
 
-call = re.compile(r'\w+\(.*\)')
-identifier = re.compile(r'\w+')
+Class = NewType('Class', object)
+Traceback = NewType('Traceback', object)
 
 
-def extract_data_from_bottom_tb(traceback):
+def extract_data_from_bottom_tb(traceback: Traceback):
     """
     Find the 'root' stack frame of the traceback and return its
     globals, locals and the original linenumber where exception was raised. 
@@ -33,10 +35,10 @@ def extract_data_from_bottom_tb(traceback):
     return globals_, locals_, bottom_tb.tb_lineno
 
 
-def parse_assertion_line(assertion_line, exc_message):
+def parse_assertion_line(assertion_line: str, exc_message: str) -> Tuple[str, Union[str, None]]:
     """
     For the given assertion line and exception message, exctract
-    the assertion 'context'. Returns the raw assertion expression.
+    the assertion 'context'. Returns the raw assertion expression and the context in a tuple.
 
     Example:
 
@@ -55,10 +57,10 @@ def parse_assertion_line(assertion_line, exc_message):
     return assertion_line, context
 
 
-def split_expressions(assertion):
+def split_expressions(assertion: str) -> Tuple[List[str], List[str]]:
     """
     Split the expressions from the assertion line.
-    Returns a tuple of two lists: (operators, expressions).
+    Returns a tuple of two lists: (OPERATORS, expressions).
     Experssion can be an empty string.
 
 
@@ -83,7 +85,7 @@ def split_expressions(assertion):
     
     line, _ = re.subn(string_re, str_escape_token, assertion)
 
-    operator_exp = re.compile('|'.join([ f'(?<!\\w){op}(?=\\s)' for op in operators ]))
+    operator_exp = re.compile('|'.join([ f'(?<!\\w){op}(?=\\s)' for op in OPERATORS ]))
     ops = re.findall(operator_exp, line)
     
     expressions = list()
@@ -98,7 +100,7 @@ def split_expressions(assertion):
     return ops, expressions
 
 
-def resolve_assertion_error(exc_type, exception, tb):
+def resolve_assertion_error(exc_type: Class, exception: Exception, tb: Traceback) -> str:
     """
     Resolve the identifier values for a given AssertionError in the error message.
     """
@@ -114,7 +116,7 @@ def resolve_assertion_error(exc_type, exception, tb):
         return f'\nAssertionError on line {lineno}.\n\n'
 
     #exctract the optional user provided 'context' for this assertion
-    #separate the actual variable names from operators
+    #separate the actual variable names from OPERATORS
     assertion_line = match.group()
     assertion, context = parse_assertion_line(assertion_line, tb_text)
     ops, expressions = split_expressions(assertion)
