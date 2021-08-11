@@ -11,8 +11,8 @@ import traceback
 import io
 
 import microtest.assertion as assertion
-
 from microtest.data import *
+
 
 class DefaultLogger:
     
@@ -31,7 +31,7 @@ class DefaultLogger:
             self.width = max(self.MIN_WIDTH, min(cols, self.MAX_WIDTH))
 
 
-    def write_out(self, text, color=None):
+    def write(self, text: str, *, color = None):
         if not self.use_colors or color is None:
             self.out.write(text)
             return
@@ -42,68 +42,65 @@ class DefaultLogger:
         self.out.flush()
 
 
-    def write_separator(self, char, separation=1):
-        self.out.write((self.width // separation) * char)
-        self.out.write('\n')
+    def format_separator(self, char: str, separation = 1):
+        return (self.width // separation) * char
 
 
-    def log_traceback(self, exc):
-        tb = exc.__traceback__
-        exc_type = type(exc)
+    def format_traceback(self, exc_type, exc, tb):
         tb_lines = traceback.format_exception(exc_type, exc, tb)
-        self.write_out('\n')
-        self.write_out(''.join(tb_lines), Colors.RED)
-        self.write_out('\n')
+        return '\n' + '\n'.join(tb_lines[1:])
 
 
     def log_start_info(self):
-        self.write_separator('=')
-        self.write_out('Started testing...\n')
-        self.write_separator('=')
+        self.write(self.format_separator('='))
+        self.write('\nStarted testing...\n')
+        self.write(self.format_separator('='))
 
 
     def log_test_info(self, name, result, exc):
-        self.write_out(name)
         padding = self.width - len(name) - len(result) - 3
-        self.write_out(' ' + padding * '.' + ' ')
-        color = Colors.GREEN if result == Result.OK else Colors.RED
-        self.write_out(result + '\n', color)
+        self.write(name)
+        self.write(' ' + padding * '.' + ' ')
+        self.write(result  + '\n', color = Colors.GREEN if result == Result.OK else Colors.RED)
 
-        if result == Result.FAILED:
+        if exc:
             tb = exc.__traceback__
             exc_type = type(exc)
-            msg = assertion.resolve_assertion_error(exc_type, exc, tb)
-            self.write_out(msg, Colors.RED)
+
+        if result == Result.FAILED:
+            self.write(assertion.resolve_assertion_error(exc_type, exc, tb), color = Colors.RED)
             return
 
         if result == Result.ERROR:
-            self.log_traceback(exc)
+            self.write(f'\nTraceback:\n', color=Colors.RED)
+            self.write(self.format_traceback(exc_type, exc, tb), color = Colors.RED)
+            return
 
 
     def log_module_exec_error(self, module_path, exc_type, exc, tb):
-        self.log_traceback(exc)
+        self.write('\nTraceback for error raised during module execution:\n', color=Colors.RED)
+        self.write(self.format_traceback(exc_type, exc, tb), color=Colors.RED)
 
 
     def log_module_info(self, module_path):
-        self.write_out('\n' + module_path + '\n', Colors.CYAN)
+        self.write('\n' + module_path + '\n', color = Colors.CYAN)
 
     
     def log_results(self, tests, failed, errors, time):
-        self.write_out('\n')
-        self.write_separator('-')
-        self.write_out(f'Ran {tests} tests in {time}s.\n\n')
+        self.write('\n')
+        self.write(self.format_separator('-'))
+        self.write(f'\nRan {tests} tests in {time}s.\n\n')
 
         if errors == 0 and failed == 0:
-            self.write_out('OK.\n\n', Colors.GREEN)
+            self.write('OK.\n\n', color = Colors.GREEN)
             return
 
-        self.write_out(f'ERRORS: ', Colors.RED)
-        self.write_out(str(errors) + '\n')
+        self.write(f'ERRORS: ', color = Colors.RED)
+        self.write(str(errors) + '\n')
 
-        self.write_out(f'FAILED: ', Colors.RED)
-        self.write_out(str(failed) + '\n')
-
-        self.write_out('\n')
+        self.write(f'FAILED: ', color = Colors.RED)
+        self.write(str(failed) + '\n')
+        self.write('\n')
 
 
     def terminate(self):
