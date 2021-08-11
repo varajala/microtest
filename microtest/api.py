@@ -43,29 +43,25 @@ def test(func):
     """
     Make a single function part of the test suite.
     """
-    module_path = os.path.abspath(inspect.getsourcefile(func))
-    testcase = core._TestObject(func, module_path)
-    core.collect_test(module_path, testcase)
-    return testcase
+    test_obj = core._TestObject(func)
+    core.collect_test(test_obj)
+    return test_obj
 
 
 def setup(func):
-    module_path = os.path.abspath(inspect.getsourcefile(func))
-    fixture = core.get_fixture(module_path)
+    fixture = core.get_fixture()
     fixture.register_setup(func)
     return func
 
 
 def reset(func):
-    module_path = os.path.abspath(inspect.getsourcefile(func))
-    fixture = core.get_fixture(module_path)
+    fixture = core.get_fixture()
     fixture.register_reset(func)
     return func
 
 
 def cleanup(func):
-    module_path = os.path.abspath(inspect.getsourcefile(func))
-    fixture = core.get_fixture(module_path)
+    fixture = core.get_fixture()
     fixture.register_cleanup(func)
     return func
 

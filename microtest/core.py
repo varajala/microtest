@@ -20,8 +20,9 @@ exec_context = ExecutionContext()
 resources = dict()
 utilities = dict()
 
-modules = dict()
 logger = None
+current_module = None
+
 running = False
 config_in_process = False
 
@@ -64,9 +65,8 @@ def capture_exception(func):
 
 
 class _TestObject:
-    def __init__(self, func, module_path):
+    def __init__(self, func):
         self.func = func
-        self.module_path = module_path
         self.group = None
 
     def __getattribute__(self, attr):
@@ -87,7 +87,7 @@ class _TestObject:
         except Exception as exc:
             error = exc
         
-        register_test_results(self.module_path, self, error)
+        register_test_results(self, error)
         return error
 
 
@@ -326,26 +326,26 @@ def stop_testing(*args):
     logger.terminate()
 
 
-def collect_test(module_path, test_obj):
-    module = modules.get(module_path, None)
-    if module is None:
-        module = modules[module_path] = Module(module_path)
-    module.tests.append(test_obj)
+def collect_test(test_obj):
+    global current_module
+    if current_module is None:
+        current_module = Module('__main__')
+    current_module.tests.append(test_obj)
 
 
-def get_fixture(module_path):
-    module = modules.get(module_path, None)
-    if module is None:
-        module = modules[module_path] = Module(module_path)
+def get_fixture():
+    global current_module
+    if current_module is None:
+        current_module = Module('__main__')
     
-    if not module.fixture:
-        module.fixture = Fixture()
+    if not current_module.fixture:
+        current_module.fixture = Fixture()
     
-    return module.fixture
+    return current_module.fixture
 
 
 @require_init
-def register_test_results(module_path, func, exc):
+def register_test_results(func, exc):
     global failed, errors, tests
     result = Result.OK
     tests += 1
@@ -368,10 +368,10 @@ def register_module_exec_error(module_path, exc_type, exc, tb):
 
 @require_init
 def exec_modules(module_paths, exec_name):
-    global abort
+    global abort, current_module
     with exec_context:
         for module_path in filter_modules(module_paths):
-            module = modules[module_path] = Module(module_path)
+            current_module = Module(module_path)
             logger.log_module_info(module_path)
             
             try:
@@ -380,7 +380,7 @@ def exec_modules(module_paths, exec_name):
                     abort = False
                     continue
 
-                for test in filter_tests(module):
+                for test in filter_tests(current_module):
                     call_with_resources(test)
 
             except KeyboardInterrupt:
@@ -396,30 +396,27 @@ def exec_modules(module_paths, exec_name):
 
 
 def run_current_module():
-    if running or config_in_process:
+    if running or config_in_process or current_module is None:
         return
     
     initialize()
     
     with exec_context:
-        for module_path, module in modules.items():
-            logger.log_module_info(module_path)
+        try:
+            for test in filter_tests(current_module):
+                call_with_resources(test)
+        
+        except KeyboardInterrupt:
+            return
 
-            try:
-                for test in filter_tests(module):
-                    call_with_resources(test)
-            
-            except KeyboardInterrupt:
-                return
+        except SystemExit:
+            return
 
-            except SystemExit:
-                return
-
-            except Exception as exc:
-                exc_type = type(exc)
-                traceback = exc.__traceback__
-                register_module_exec_error(module.path, exc_type, exc, traceback)
-                return
+        except Exception as exc:
+            exc_type = type(exc)
+            traceback = exc.__traceback__
+            register_module_exec_error(current_module.path, exc_type, exc, traceback)
+            return
 
 
 def run_config(path, exec_name):
