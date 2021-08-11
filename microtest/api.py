@@ -92,49 +92,24 @@ class Patch:
     Dynamically replace an attribute from the given object with the
     new object. Use as a context manager.
     """
-    def __init__(self, obj, attr, new):
-        object.__setattr__(self, 'in_context', False)
+    def __init__(self, obj, **kwargs):
         self.obj = obj
-        self.attr = attr
-        self.old = getattr(obj, attr)
-        self.new = new
-
-    def __setattr__(self, attr, value):
-        in_context = object.__getattribute__(self, 'in_context')
-        if not in_context:
-            object.__setattr__(self, attr, value)
-            return
-        
-        new = object.__getattribute__(self, 'new')
-        obj = object.__getattribute__(self, 'obj')
-        if hasattr(new, attr):
-            object.__setattr__(new, attr, value)
-            return
-        object.__setattr__(obj, attr, value)
-
-    def __getattribute__(self, attr):
-        in_context = object.__getattribute__(self, 'in_context')
-        if not in_context:
-            return object.__getattribute__(self, attr)
-        
-        new = object.__getattribute__(self, 'new')
-        obj = object.__getattribute__(self, 'obj')
-        if hasattr(new, attr):
-            return object.__getattribute__(new, attr)
-        return object.__getattribute__(obj, attr)
+        self.patched_attrs = kwargs
+        self.original_attrs = dict()
 
     def __enter__(self):
-        setattr(self.obj, self.attr, self.new)
-        self.in_context = True
+        for attr, value in self.patched_attrs.items():
+            self.original_attrs[attr] = getattr(self.obj, attr)
+            setattr(self.obj, attr, value)
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        object.__setattr__(self, 'in_context', False)
-        setattr(self.obj, self.attr, self.old)
+        for attr, value in self.original_attrs.items():
+            setattr(self.obj, attr, value)
 
 
-def patch(obj, attr, new):
-    return Patch(obj, attr, new)
+def patch(obj, **kwargs):
+    return Patch(obj, **kwargs)
 
 
 def resource(func):
