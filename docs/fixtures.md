@@ -73,11 +73,11 @@ If an exception is raised during setup function, the cleanup function wont be ca
 
 All of these functions are optional and you can create any combination of the **setup**, **reset** and **cleanup** functions. For example you may define setup and cleanup functions, but no reset function, or define just a reset function.
 
-These functions define the fixture inside a given module. Microtest also provides ways of defining actions to be done before and after executing the individual test modules. When executing microtest as a module, microtest will first search an entrypoint to perform configuration. You can read the details for setting up this entrypoint in the [config](#./config.md) section. This entrypoint is a python module, which will be executed before searching and executing the test modules. This is the place to do setup actions before any actual test code is executed.
+These functions define the fixture inside a given module. Microtest also provides ways of defining actions to be done before and after executing the individual test modules. When executing microtest as a module, microtest will first search an entrypoint to perform configuration. You can read the details for setting up this entrypoint in the [config](config.md) section. This entrypoint is a python module, which will be executed before searching and executing the test modules. This is the place to do setup actions before any actual test code is executed.
 
 To do cleanup actions before exiting the program microtest provides the **on_exit** decorator. This is recommended to be defined during the configuration process. The function provided into **on_exit** must take three named arguments: *exception_type*, *exception* and *traceback*. These are similiar to Pyhton's builtin **sys.exc_info**. If microtest exits normally these are all set to None.
 
-Here's an example from the [config](#./config.md) section that is based on code I have personally used to test Flask applications:
+Here's an example from the [config](config.md) section that is based on code I have personally used to test Flask applications:
 
 ```python
 import microtest
@@ -111,4 +111,4 @@ def setup():
 ```
 This sets up the Flask application instance and makes it available to all test functions in the executed modules. It also creates a temporary file where the sqlite database is created.
 
-The **call** decorator simply calls the setup function when microtest is doing configuration or running. See the [resources](#./resources.md) section to read more on the **add_resource** function.
+The **call** decorator simply calls the setup function when microtest is doing configuration or running. See the [resources](resources.md) section to read more on the **add_resource** function.

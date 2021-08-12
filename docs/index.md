@@ -1,14 +1,14 @@
 # Documentation
 
 ## Table of contents
-- [Basics](#./basics.md)
-- [Running](#./running.md)
-- [Fixtures](#./fixtures.md)
-- [Resources](#./resources.md)
-- [Utilites](#./utilities.md)
-- [Config](#./config.md)
-- [Other Features](#./other-features.md)
-- [Customizing](#./customizing.md)
+- [Basics](basics.md)
+- [Running](running.md)
+- [Fixtures](fixtures.md)
+- [Resources](resources.md)
+- [Utilites](utilities.md)
+- [Config](config.md)
+- [Other Features](other-features.md)
+- [Customizing](customizing.md)
 
 
 The **test**-decorator tells microtest to run the function *test_func* as a part of the test suite and check its result.
