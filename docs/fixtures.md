@@ -1,6 +1,6 @@
 ## Fixtures
 
-[Wikipedia](#https://en.wikipedia.org/wiki/Test_fixture) defines a test fixture in the following way: 
+[Wikipedia](https://en.wikipedia.org/wiki/Test_fixture) defines a test fixture in the following way: 
 >"A test fixture is an environment used to consistently test some item, device, or piece of software."
 
 In software testing this means setting up a reproducible environment for a set of tests to be executed in and doing the appropriate cleanup actions after the testing.
@@ -75,7 +75,7 @@ All of these functions are optional and you can create any combination of the **
 
 These functions define the fixture inside a given module. Microtest also provides ways of defining actions to be done before and after executing the individual test modules. When executing microtest as a module, microtest will first search an entrypoint to perform configuration. You can read the details for setting up this entrypoint in the [config](config.md) section. This entrypoint is a python module, which will be executed before searching and executing the test modules. This is the place to do setup actions before any actual test code is executed.
 
-To do cleanup actions before exiting the program microtest provides the **on_exit** decorator. This is recommended to be defined during the configuration process. The function provided into **on_exit** must take three named arguments: *exception_type*, *exception* and *traceback*. These are similiar to Pyhton's builtin **sys.exc_info**. If microtest exits normally these are all set to None.
+To do cleanup actions before exiting the program microtest provides the **on_exit** decorator. This is recommended to be defined during the configuration process. The function provided into **on_exit** must take three named arguments: *exception_type*, *exception* and *traceback*. These are similiar to Python's builtin **sys.exc_info**. If microtest exits normally these are all set to None.
 
 Here's an example from the [config](config.md) section that is based on code I have personally used to test Flask applications:
 
