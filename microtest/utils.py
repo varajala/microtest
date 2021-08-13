@@ -6,8 +6,12 @@ Author: Valtteri Rajalainen
 
 import stat
 import os
+import sys
 import shutil
 import tempfile
+import subprocess as subp
+import time
+import socket
 
 from microtest.objects import Types
 
@@ -113,13 +117,79 @@ class UnauthorizedDirectory:
         os.chmod(self.dir_path, self.dir_mode)
 
 
+class Process:
+    def __init__(self, stream, process):
+        self.last_read = 0
+        self.stream = stream
+        self.process = process
+
+    @property
+    def running(self):
+        proc = self.process
+        #multiprocessing.Process
+        if hasattr(proc, 'is_alive'):
+            return proc.is_alive()
+        #subprocess.Popen
+        if hasattr(proc, 'poll'):
+            return proc.poll() is None
+
+    def read_output(self, *, read_all=False):
+        i = self.last_read if not read_all else 0
+        self.last_read = self.stream.tell()
+        self.stream.seek(i)
+        return self.stream.read()
+
+    def kill(self):
+        self.process.kill()
+        self.stream.close()
+
+    def terminate(self):
+        self.process.terminate()
+        self.stream.close()
+
+
 def create_temp_dir(*, files=list(), dirs=list()) -> TemporaryDirectory:
     dir_ = TemporaryDirectory()
     dir_.populate(files, dirs)
     return dir_
 
 
-def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDriectory]:
+def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDirectory]:
     if os.path.isfile(path):
         return UnauthorizedFile(path)
     return UnauthorizedDirectory(path)
+
+
+def start_smtp_server(*,
+    port: int,
+    wait = True,
+    localhost: str = 'localhost',
+    ) -> Process:
+
+    def wait_for_server_init(host: tuple):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
+            while True:
+                try:
+                    soc.connect(host)
+                
+                except OSError:
+                    time.sleep(0.1)
+                    continue
+                
+                else:
+                    soc.close()
+                    break
+
+    if not sys.executable:
+        raise RuntimeError('Can\'t find the Python executable (sys.exectuable is None or "")')
+    
+    host_str = ':'.join([localhost, str(port)])
+    cmd = [sys.executable, '-u', '-m', 'smtpd', '-c', 'DebuggingServer', '-n', host_str]
+    
+    stream = tempfile.TemporaryFile(mode='w+')
+    proc = subp.Popen(cmd, stdout=stream)
+
+    if wait:
+        wait_for_server_init((localhost, port))
+    return Process(stream, proc)
+
