@@ -46,7 +46,7 @@ def scan_directory_safely(path: str) -> Iterable:
     return result
 
 
-def is_test_module(filename):
+def is_test_module(filename: str):
     try:
         exp = re.compile(test_module_regex)    
     except re.error:

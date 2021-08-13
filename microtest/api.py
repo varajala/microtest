@@ -10,6 +10,14 @@ import traceback
 import microtest.core as core
 import functools
 
+from typing import Union, Callable, NewType
+from types import FunctionType, TracebackType
+
+
+Function = NewType('Function', FunctionType)
+Class = NewType('Class', object)
+Traceback = NewType('Traceback', TracebackType)
+
 
 __all__ = [
     'test',
@@ -38,31 +46,31 @@ __all__ = [
     ]
 
 
-def test(func):
+def test(func: Function) -> core._TestObject:
     test_obj = core._TestObject(func)
     core.collect_test(test_obj)
     return test_obj
 
 
-def setup(func):
+def setup(func: Function) -> Function:
     fixture = core.get_fixture()
     fixture.register_setup(func)
     return func
 
 
-def reset(func):
+def reset(func: Function) -> Function:
     fixture = core.get_fixture()
     fixture.register_reset(func)
     return func
 
 
-def cleanup(func):
+def cleanup(func: Function) -> Function:
     fixture = core.get_fixture()
     fixture.register_cleanup(func)
     return func
 
 
-def raises(callable, params, exc_type):
+def raises(callable: Callable, params: Union[tuple, dict], exc_type: Class) -> bool:
     """
     Return True if provided callable raises an exception of type exc_type with
     the given arguments. All other exception types will be raised normally.
@@ -88,7 +96,7 @@ class Patch:
     Dynamically replace an attributes from the given object.
     Use as a context manager.
     """
-    def __init__(self, obj, **kwargs):
+    def __init__(self, obj: object, **kwargs):
         self.obj = obj
         self.patched_attrs = kwargs
         self.original_attrs = dict()
@@ -99,21 +107,21 @@ class Patch:
             setattr(self.obj, attr, value)
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(self, exc_type: Class, exc: Exception, tb: Traceback):
         for attr, value in self.original_attrs.items():
             setattr(self.obj, attr, value)
 
 
-def patch(obj, **kwargs):
+def patch(obj: object, **kwargs) -> Patch:
     return Patch(obj, **kwargs)
 
 
-def resource(func):
+def resource(func: Function):
     obj = core.call_with_resources(func)
     core.add_resource(func.__name__, obj)
 
 
-def utility(obj, *, name=None):
+def utility(obj: object, *, name: str = None):
     """
     Mark the wrapped object as a utility.
     These are injected into the module namespace
@@ -125,15 +133,15 @@ def utility(obj, *, name=None):
     return obj
 
 
-def add_resource(name, obj):
+def add_resource(name: str, obj: object):
     core.add_resource(name, obj)
 
 
-def on_exit(func):
+def on_exit(func: Function):
     core.on_exit(func)
 
 
-def call(func):
+def call(func: Function) -> Function:
     """
     Call the function during module exection if microtest is running
     or doing configuration.
@@ -143,7 +151,7 @@ def call(func):
     return func
 
 
-def group(name):
+def group(name: str) -> Function:
     def wrapper(test_obj):
         test_obj.group = name
         return test_obj

@@ -10,8 +10,14 @@ import re
 import traceback
 import io
 
+from typing import NewType
+
 import microtest.assertion as assertion
 from microtest.data import *
+
+
+Class = NewType('Class', object)
+Traceback = NewType('Traceback', object)
 
 
 class DefaultLogger:
@@ -57,7 +63,7 @@ class DefaultLogger:
         self.write(self.format_separator('='))
 
 
-    def log_test_info(self, name, result, exc):
+    def log_test_info(self, name: str, result: str, exc: Exception):
         padding = self.width - len(name) - len(result) - 3
         self.write(name)
         self.write(' ' + padding * '.' + ' ')
@@ -77,16 +83,16 @@ class DefaultLogger:
             return
 
 
-    def log_module_exec_error(self, module_path, exc_type, exc, tb):
+    def log_module_exec_error(self, module_path: str, exc_type: Class, exc: Exception, tb: Traceback):
         self.write('\nTraceback for error raised during module execution:\n', color=Colors.RED)
         self.write(self.format_traceback(exc_type, exc, tb), color=Colors.RED)
 
 
-    def log_module_info(self, module_path):
+    def log_module_info(self, module_path: str):
         self.write('\n' + module_path + '\n', color = Colors.CYAN)
 
     
-    def log_results(self, tests, failed, errors, time):
+    def log_results(self, tests: int, failed: int, errors: int, time: float):
         self.write('\n')
         self.write(self.format_separator('-'))
         self.write(f'Ran {tests} tests in {time}s.\n\n')
