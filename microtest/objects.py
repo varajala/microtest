@@ -15,6 +15,8 @@ class Types:
     
     Callable = typing.Callable
     Union = typing.Union
+    Iterable = typing.Iterable
+    Any = typing.Any
 
 
 class Output:

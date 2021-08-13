@@ -154,7 +154,7 @@ def group(name: str) -> Types.Function:
 
 def exclude_groups(*args):
     for name in args:
-        core.exclude_groups.add(name)
+        core.excluded_groups.add(name)
 
 
 def only_groups(*args):
@@ -164,7 +164,7 @@ def only_groups(*args):
 
 def exclude_modules(*args):
     for name in args:
-        core.exclude_modules.add(name)
+        core.excluded_modules.add(name)
 
 
 def only_modules(*args):

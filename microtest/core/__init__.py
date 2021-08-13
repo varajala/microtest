@@ -4,15 +4,20 @@ Stateful component of microtest.
 Author: Valtteri Rajalainen
 """
 
+import functools
 import timeit
-import inspect
 import runpy
 import os
 import sys
-import functools
 
-from typing import Iterable, Any
 from microtest.objects import Module, Result, Types, ExecutionContext
+from microtest.core.utils import (
+    filter_tests,
+    filter_modules,
+    capture_exception,
+    generate_signature,
+    check_logger_object
+)
 
 
 exec_context = ExecutionContext()
@@ -32,10 +37,10 @@ tests: int = 0
 t_start: float = None
 t_end: float = None
 
-exclude_modules = set()
+excluded_modules = set()
 included_modules = set()
 
-exclude_groups = set()
+excluded_groups = set()
 included_groups = set()
 
 
@@ -151,129 +156,6 @@ class _Fixture:
         raise error
 
 
-def capture_exception(func: Types.Function) -> Types.Function:
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        error = None
-        try:
-            func(*args, **kwargs)
-        except Exception as exc:
-            error = exc
-        return error
-    return wrapper
-
-
-def generate_signature(obj: object) -> list:
-    func_obj = None
-    if inspect.isfunction(obj) or inspect.ismethod(obj):
-        func_obj = obj
-
-    if isinstance(obj, _TestObject):
-        func_obj = obj.func
-
-    if func_obj is None:
-        info = 'Cannot generate signature for object that is not '
-        info += 'a function, method or microtest.core._TestObject instance.'
-        raise TypeError(info)
-    
-    signature = inspect.signature(func_obj)
-    return [ param for param in signature.parameters ]
-
-
-def check_logger_object(obj: object):
-    logger_interface = (
-        ('log_start_info', list()),
-        ('log_module_info', ['module_path']),
-        ('log_test_info', ['name', 'result', 'exc']),
-        ('log_module_exec_error', ['module_path', 'exc_type', 'exc', 'tb']),
-        ('log_results', ['tests', 'failed', 'errors', 'time']),
-        ('terminate', list())
-    )
-    
-    for requirement in logger_interface:
-        method_name, signature = requirement
-        if not hasattr(obj, method_name):
-            info = f'Invalid Logger implementation: Expected Logger to have attribute "{method_name}"'
-            raise TypeError(info)
-        
-        method_obj = getattr(obj, method_name)
-        if not hasattr(method_obj, '__call__'):
-            info = f'Invalid Logger implementation: Attribute "{method_name}" is not callable'
-            raise TypeError(info)
-        
-        method_obj_signature = generate_signature(method_obj)
-        if method_obj_signature != signature:
-            info = ''.join([
-                'Invalid Logger implementation: ',
-                f'Signature of "{method_name}" doesn\'t match the interface requirement.\n\n',
-                f'{method_obj_signature} != {signature}'
-                ])
-            raise TypeError(info)
-    
-
-def filter_tests(module: Module) -> Iterable:
-    """
-    Filter tests inside a given module based on their groups.
-
-    If included_groups is not empty, only tests with those groups are returned,
-    even if their group is in exclude_groups.
-
-    If included_group is empty, the excluded_group is checked for filters.
-
-    If the module has a fixture, the tests are passed to the fixture and
-    the fixture instance is returned.
-    """
-    tests = module.tests.copy()
-    if included_groups:
-        tests = list(filter(lambda test: test.group in included_groups, module.tests))
-    
-    elif exclude_groups:
-        tests = list(filter(lambda test: test.group not in exclude_groups, module.tests))
-
-    if module.fixture:
-        module.fixture.tests = tests
-        return module.fixture
-    return tests
-
-
-def filter_modules(modules: tuple) -> tuple:
-    """
-    Filter the executed modules based on inlcuded_modules and exclude_modules.
-
-    These sets can contain restrictions as strings representing filepaths or parts of filepaths.
-    If the restriction is an absolute filepath the paths are comapred with '=='.
-    Otherwise the comaprison will be 'restriction in path' (path is an absolute filepath).
-
-    If included_modules is not empty only those modules will be executed,
-    even if exclude_modules is not empty.
-    
-    If exclude_modules is not empty these modules will be filtered out.
-    """
-    def path_meets_restriction(module_path: str, restriction: str) -> bool:
-        if os.path.isabs(restriction):
-            return module_path == restriction
-        return restriction in module_path
-
-    if included_modules:
-        filtered_modules = list()
-        for restriction in included_modules:
-            for module_path in modules:
-                if path_meets_restriction(module_path, restriction):
-                    filtered_modules.append(module_path)
-        return tuple(filtered_modules)
-    
-    filtered_modules = list(modules)
-    
-    for restriction in exclude_modules:
-        removed = 0
-        for index, module_path in enumerate(modules):
-            if path_meets_restriction(module_path, restriction):
-                filtered_modules.pop(index - removed)
-                removed += 1
-    
-    return tuple(filtered_modules)
-
-
 def require_init(func: Types.Function) -> Types.Function:
     """
     Wrapper function to ensure proper initialization before execution.
@@ -325,7 +207,7 @@ def get_fixture() -> _Fixture:
     return current_module.fixture
 
 
-def call_with_resources(func: Types.Function) -> Any:
+def call_with_resources(func: Types.Function) -> Types.Any:
     kwargs = dict()
     signature = generate_signature(func)
     for item in signature:
@@ -373,14 +255,14 @@ def register_module_exec_error(module_path: str, exc_type: Types.Class, exc: Exc
 def exec_modules(module_paths: tuple, exec_name: str):
     global current_module
     with exec_context:
-        for module_path in filter_modules(module_paths):
+        for module_path in filter_modules(module_paths, included_modules, excluded_modules):
             current_module = Module(module_path)
             logger.log_module_info(module_path)
             
             try:
                 runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
 
-                for test in filter_tests(current_module):
+                for test in filter_tests(current_module, included_groups, excluded_groups):
                     call_with_resources(test)
 
             except KeyboardInterrupt:
@@ -403,7 +285,7 @@ def run_current_module():
     
     with exec_context:
         try:
-            for test in filter_tests(current_module):
+            for test in filter_tests(current_module, included_groups, excluded_groups):
                 call_with_resources(test)
         
         except KeyboardInterrupt:
