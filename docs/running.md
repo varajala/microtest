@@ -95,7 +95,7 @@ More on the different availabe config options in the [config](config.md) section
 
 ### Test discovery
 
-After config step microtest will search for the test modules.
+After the config step microtest will search for the test modules.
 This is done after the config phase so that you can set the rules for finding suitable test modules.
 
 By default microtest will do a breadth-first-search starting from the provided directory path and include all python modules

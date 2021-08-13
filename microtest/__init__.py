@@ -15,6 +15,10 @@ from microtest.logging import DefaultLogger
 from microtest.api import *
 
 
+CONFIG_SCRIPT_ENV_VARIABLE = 'MICROTEST_ENTRYPOINT'
+DEFAULT_CONFIG_SCRIPT = 'main.py'
+
+
 def set_logger(obj):
     if core.running:
         info = 'Can\'t set logger while executing tests. This must be done during configuration'
@@ -32,7 +36,6 @@ set_logger(DefaultLogger())
 
 
 def run_from_commandline(args):
-    #handle flags etc...
     path = cwd = os.getcwd()
     if args:
         path = args.pop(-1)
@@ -48,9 +51,12 @@ def run_from_commandline(args):
         core.exec_modules((path,), exec_name)
         return
 
-    entrypoint = os.environ.get('MICROTEST_ENTRYPOINT', 'main.py')
-    if entrypoint in os.listdir(path):
-        core.run_config(os.path.join(path, entrypoint), exec_name)
+    config_file = os.environ.get(CONFIG_SCRIPT_ENV_VARIABLE, DEFAULT_CONFIG_SCRIPT)
+    if not os.path.isabs(config_file):
+        config_file = os.path.join(path, config_file)
+    
+    if os.path.exists(config_file):
+        core.run_config(config_file, exec_name)
 
     core.exec_modules(scanner.find_tests(path), exec_name)
 
