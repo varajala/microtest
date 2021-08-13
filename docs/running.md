@@ -2,7 +2,7 @@
 
 Microtest can be used to run tests automatically in two different ways. The first way is to use the **microtest.run** function and run the python module normally as a script.
 
-Let's revisit the example from the [Basics](basics.md) section:
+Let's revisit the example from the [basics](basics.md) section:
 
 ```python
 import microtest
@@ -71,6 +71,11 @@ However when running microtest whis way there are many things happening differen
 
 When microtest is executed as a module, the first thing that happens is that microtest will check if the provided path is a file or not. When the path points to a file, microtest will simply just execute that single module. This is not that different from executing the test module as a script.
 
+<br>
+
+> **NOTE**: Microtest will expect the last command line argument to be the path to the tested file or directory. Microtest will use the current working directory if no arguments are provided.
+
+<br>
 
 But when the path points to a directory rather than a single file, microtest test will perform the following steps:
 
