@@ -25,7 +25,6 @@ __all__ = [
     'group',
     
     'run',
-    'abort',
     'raises',
     'patch',
     
@@ -40,9 +39,6 @@ __all__ = [
 
 
 def test(func):
-    """
-    Make a single function part of the test suite.
-    """
     test_obj = core._TestObject(func)
     core.collect_test(test_obj)
     return test_obj
@@ -89,8 +85,8 @@ def raises(callable, params, exc_type):
 
 class Patch:
     """
-    Dynamically replace an attribute from the given object with the
-    new object. Use as a context manager.
+    Dynamically replace an attributes from the given object.
+    Use as a context manager.
     """
     def __init__(self, obj, **kwargs):
         self.obj = obj
@@ -120,7 +116,7 @@ def resource(func):
 def utility(obj, *, name=None):
     """
     Mark the wrapped object as a utility.
-    These are injected into the function namespace
+    These are injected into the module namespace
     during test execution.
     """
     if name is None:
@@ -145,17 +141,6 @@ def call(func):
     if core.running or core.config_in_process:
         core.call_with_resources(func)
     return func
-
-
-def abort():
-    """
-    Set the abort flag.
-    This is checked after the module is executed and before
-    any tests are executed.
-
-    Cleared after every module executed.
-    """
-    core.abort = True
 
 
 def group(name):

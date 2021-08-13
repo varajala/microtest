@@ -11,9 +11,15 @@ import os
 import sys
 import functools
 
-from typing import Iterable
+from typing import Iterable, NewType, Any
+from types import TracebackType, FunctionType
 
 from microtest.data import *
+
+
+Class = NewType('Class', object)
+Traceback = NewType('Traceback', TracebackType)
+Function = NewType('Function', FunctionType)
 
 
 exec_context = ExecutionContext()
@@ -39,8 +45,6 @@ included_modules = set()
 exclude_groups = set()
 included_groups = set()
 
-abort = False
-
 
 logger_interface = (
     ('log_start_info', list()),
@@ -52,7 +56,7 @@ logger_interface = (
     )
 
 
-def capture_exception(func):
+def capture_exception(func: Function) -> Function:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         error = None
@@ -65,11 +69,11 @@ def capture_exception(func):
 
 
 class _TestObject:
-    def __init__(self, func):
+    def __init__(self, func: Function):
         self.func = func
         self.group = None
 
-    def __getattribute__(self, attr):
+    def __getattribute__(self, attr: str):
         try:
             return object.__getattribute__(self, attr)
         except AttributeError as err:
@@ -83,15 +87,12 @@ class _TestObject:
         error = None
         try:
             self.func(*args, **kwargs)
-        
         except Exception as exc:
             error = exc
-        
         register_test_results(self, error)
-        return error
 
 
-class Fixture:
+class _Fixture:
 
     def __init__(self):
         self._setup = None
@@ -103,25 +104,25 @@ class Fixture:
         self.error = None
 
 
-    def append(self, test):
+    def append(self, test: _TestObject):
         self.tests.append(test)
 
 
-    def register_setup(self, func):
+    def register_setup(self, func: Function):
         if self._setup:
             info = 'Setup function is already set for this module'
             raise RuntimeError()
         self._setup = capture_exception(func)
 
 
-    def register_cleanup(self, func):
+    def register_cleanup(self, func: Function):
         if self._cleanup:
             info = 'Cleanup function is already set for this module'
             raise RuntimeError()
         self._cleanup = capture_exception(func)
 
 
-    def register_reset(self, func):
+    def register_reset(self, func: Function):
         if self._reset:
             info = 'Reset function is already set for this module'
             raise RuntimeError()
@@ -132,7 +133,7 @@ class Fixture:
         return self
 
 
-    def __next__(self):
+    def __next__(self) -> _TestObject:
         if not self.setup_done:
             self.do_setup()
         
@@ -146,7 +147,7 @@ class Fixture:
         raise StopIteration
 
 
-    def wrap_test(self, func):
+    def wrap_test(self, func: Function) -> Function:
         @functools.wraps(func)
         def wrapper(**kwargs):
             if self._reset:
@@ -172,14 +173,14 @@ class Fixture:
                 self.abort_with_error(error, do_cleanup=False)
 
     
-    def abort_with_error(self, error, *, do_cleanup=True):
+    def abort_with_error(self, error: Exception, *, do_cleanup=True):
         self.error = error
         if do_cleanup:
             self.do_cleanup()
         raise error
 
 
-def generate_signature(obj):
+def generate_signature(obj: object) -> list:
     func_obj = None
     if inspect.isfunction(obj) or inspect.ismethod(obj):
         func_obj = obj
@@ -217,10 +218,8 @@ def check_logger_object(obj: object):
                 ])
             raise TypeError(info)
     
-    return True
-    
 
-def call_with_resources(func):
+def call_with_resources(func: Function) -> Any:
     kwargs = dict()
     signature = generate_signature(func)
     for item in signature:
@@ -230,19 +229,19 @@ def call_with_resources(func):
     return func(**kwargs)
 
 
-def add_resource(name, obj):
+def add_resource(name: str, obj: object):
     resources[name] = obj
 
 
-def add_utility(name, obj):
+def add_utility(name: str, obj: object):
     utilities[name] = obj
 
 
-def on_exit(func):
+def on_exit(func: Function):
     exec_context.add_cleanup_operation(func)
 
 
-def require_init(func):
+def require_init(func: Function) -> Function:
     """
     Wrapper function to ensure proper initialization before execution.
     """
@@ -328,26 +327,26 @@ def stop_testing(*args):
     logger.terminate()
 
 
-def collect_test(test_obj):
+def collect_test(test_obj: _TestObject):
     global current_module
     if current_module is None:
         current_module = Module('__main__')
     current_module.tests.append(test_obj)
 
 
-def get_fixture():
+def get_fixture() -> _Fixture:
     global current_module
     if current_module is None:
         current_module = Module('__main__')
     
     if not current_module.fixture:
-        current_module.fixture = Fixture()
+        current_module.fixture = _Fixture()
     
     return current_module.fixture
 
 
 @require_init
-def register_test_results(func, exc):
+def register_test_results(func: Function, exc: Exception):
     global failed, errors, tests
     result = Result.OK
     tests += 1
@@ -362,15 +361,15 @@ def register_test_results(func, exc):
 
 
 @require_init
-def register_module_exec_error(module_path, exc_type, exc, tb):
+def register_module_exec_error(module_path: str, exc_type: Class, exc: Exception, tb: Traceback):
     global errors, init, t_start
     errors += 1
     logger.log_module_exec_error(module_path, exc_type, exc, tb)
 
 
 @require_init
-def exec_modules(module_paths, exec_name):
-    global abort, current_module
+def exec_modules(module_paths: tuple, exec_name: str):
+    global current_module
     with exec_context:
         for module_path in filter_modules(module_paths):
             current_module = Module(module_path)
@@ -378,9 +377,6 @@ def exec_modules(module_paths, exec_name):
             
             try:
                 runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
-                if abort:
-                    abort = False
-                    continue
 
                 for test in filter_tests(current_module):
                     call_with_resources(test)
@@ -421,7 +417,7 @@ def run_current_module():
             return
 
 
-def run_config(path, exec_name):
+def run_config(path: str, exec_name: str):
     global config_in_process
     config_in_process = True
     try:
