@@ -1,6 +1,8 @@
 ## Running
 
-Microtest can be used to run tests automatically in two different ways. The first way is to use the **microtest.run** function and run the python module normally. Let's revisit the exampple from the [Basics](basics.md) section:
+Microtest can be used to run tests automatically in two different ways. The first way is to use the **microtest.run** function and run the python module normally as a script.
+
+Let's revisit the example from the [Basics](basics.md) section:
 
 ```python
 import microtest
@@ -65,24 +67,44 @@ FAILED: 1
 ```
 
 As you can see there is not much of a difference when running only a single module.
-However when running microtest as a module there are many things happening differently internally. When microtest is executed as a module the first thing that happens is that microtest will check if the provided path is a file or not. When the path points to a file, microtest will wimply just execute that single module. This is not that different from executing the test module as a script.
+However when running microtest whis way there are many things happening differently internally.
+
+When microtest is executed as a module, the first thing that happens is that microtest will check if the provided path is a file or not. When the path points to a file, microtest will simply just execute that single module. This is not that different from executing the test module as a script.
+
+
+But when the path points to a directory rather than a single file, microtest test will perform the following steps:
+
+  - look for a configuration script
+  - execute the configuration script if one was found
+  - look for test modules inside the directory structure
+  - execute the found test modules
 
 <br>
 
 ### Config script
-When the provided path points to a directory microtest will do couple things before executing any test code. First microtest will search for a config script. By default microtest will check the provided directory for a file called **main.py**. This can be changed with an environment variable called **MICROTEST_ENTRYPOINT**. The entrypoint can be set to a relative or an absolute path.
-If a config script is found it will be executed normally before any tests. The config phase is separate from the testing phase and any exceptions raised during the configuration will stop the program executing any further. More on the config options in the [config](config.md) section.
+
+First microtest will search for a config script. By default microtest will check the provided directory for a file called **main.py**.
+
+This can be changed with an environment variable called **MICROTEST_ENTRYPOINT**. The entrypoint can be set to a relative or an absolute path.
+
+If a config script is found it will be executed normally before any tests. This step is completely separate from the acrtual testing and any exceptions raised during the configuration will stop the program executing any further. 
+
+More on the different availabe config options in the [config](config.md) section.
 
 <br>
 
 ### Test discovery
 
-After the config phase microtest will search for the test modules. This is done after the config phase so you can set the rules for finding suitable test modules. By default microtest will do a breadth-first-search starting from the provided directory path and include all python modules
-which name either
+After config step microtest will search for the test modules.
+This is done after the config phase so that you can set the rules for finding suitable test modules.
+
+By default microtest will do a breadth-first-search starting from the provided directory path and include all python modules
+which's name either
 
   - starts with **test_** or **tests_**
   - ends with **_test** or **_tests**
   - is equal to **test** or **tests**
+
 
 This can be changed during the config phase by changing the regex that is responsible for matching test modules. Here is the default regex for finding test modules: 
 
