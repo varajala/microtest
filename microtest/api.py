@@ -10,13 +10,7 @@ import traceback
 import microtest.core as core
 import functools
 
-from typing import Union, Callable, NewType
-from types import FunctionType, TracebackType
-
-
-Function = NewType('Function', FunctionType)
-Class = NewType('Class', object)
-Traceback = NewType('Traceback', TracebackType)
+from microtest.objects import Types
 
 
 __all__ = [
@@ -46,31 +40,31 @@ __all__ = [
     ]
 
 
-def test(func: Function) -> core._TestObject:
+def test(func: Types.Function) -> core._TestObject:
     test_obj = core._TestObject(func)
     core.collect_test(test_obj)
     return test_obj
 
 
-def setup(func: Function) -> Function:
+def setup(func: Types.Function) -> Types.Function:
     fixture = core.get_fixture()
     fixture.register_setup(func)
     return func
 
 
-def reset(func: Function) -> Function:
+def reset(func: Types.Function) -> Types.Function:
     fixture = core.get_fixture()
     fixture.register_reset(func)
     return func
 
 
-def cleanup(func: Function) -> Function:
+def cleanup(func: Types.Function) -> Types.Function:
     fixture = core.get_fixture()
     fixture.register_cleanup(func)
     return func
 
 
-def raises(callable: Callable, params: Union[tuple, dict], exc_type: Class) -> bool:
+def raises(callable: Types.Callable, params: Types.Union[tuple, dict], exc_type: Types.Class) -> bool:
     """
     Return True if provided callable raises an exception of type exc_type with
     the given arguments. All other exception types will be raised normally.
@@ -107,7 +101,7 @@ class Patch:
             setattr(self.obj, attr, value)
         return self
 
-    def __exit__(self, exc_type: Class, exc: Exception, tb: Traceback):
+    def __exit__(self, exc_type: Types.Class, exc: Exception, tb: Types.Traceback):
         for attr, value in self.original_attrs.items():
             setattr(self.obj, attr, value)
 
@@ -116,7 +110,7 @@ def patch(obj: object, **kwargs) -> Patch:
     return Patch(obj, **kwargs)
 
 
-def resource(func: Function):
+def resource(func: Types.Function):
     obj = core.call_with_resources(func)
     core.add_resource(func.__name__, obj)
 
@@ -137,11 +131,11 @@ def add_resource(name: str, obj: object):
     core.add_resource(name, obj)
 
 
-def on_exit(func: Function):
+def on_exit(func: Types.Function):
     core.on_exit(func)
 
 
-def call(func: Function) -> Function:
+def call(func: Types.Function) -> Types.Function:
     """
     Call the function during module exection if microtest is running
     or doing configuration.
@@ -151,7 +145,7 @@ def call(func: Function) -> Function:
     return func
 
 
-def group(name: str) -> Function:
+def group(name: str) -> Types.Function:
     def wrapper(test_obj):
         test_obj.group = name
         return test_obj

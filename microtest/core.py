@@ -11,15 +11,8 @@ import os
 import sys
 import functools
 
-from typing import Iterable, NewType, Any
-from types import TracebackType, FunctionType
-
-from microtest.data import *
-
-
-Class = NewType('Class', object)
-Traceback = NewType('Traceback', TracebackType)
-Function = NewType('Function', FunctionType)
+from typing import Iterable, Any
+from microtest.objects import Module, Result, Types, ExecutionContext
 
 
 exec_context = ExecutionContext()
@@ -56,7 +49,7 @@ logger_interface = (
     )
 
 
-def capture_exception(func: Function) -> Function:
+def capture_exception(func: Types.Function) -> Types.Function:
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         error = None
@@ -69,7 +62,7 @@ def capture_exception(func: Function) -> Function:
 
 
 class _TestObject:
-    def __init__(self, func: Function):
+    def __init__(self, func: Types.Function):
         self.func = func
         self.group = None
 
@@ -108,21 +101,21 @@ class _Fixture:
         self.tests.append(test)
 
 
-    def register_setup(self, func: Function):
+    def register_setup(self, func: Types.Function):
         if self._setup:
             info = 'Setup function is already set for this module'
             raise RuntimeError()
         self._setup = capture_exception(func)
 
 
-    def register_cleanup(self, func: Function):
+    def register_cleanup(self, func: Types.Function):
         if self._cleanup:
             info = 'Cleanup function is already set for this module'
             raise RuntimeError()
         self._cleanup = capture_exception(func)
 
 
-    def register_reset(self, func: Function):
+    def register_reset(self, func: Types.Function):
         if self._reset:
             info = 'Reset function is already set for this module'
             raise RuntimeError()
@@ -147,7 +140,7 @@ class _Fixture:
         raise StopIteration
 
 
-    def wrap_test(self, func: Function) -> Function:
+    def wrap_test(self, func: Types.Function) -> Types.Function:
         @functools.wraps(func)
         def wrapper(**kwargs):
             if self._reset:
@@ -219,7 +212,7 @@ def check_logger_object(obj: object):
             raise TypeError(info)
     
 
-def call_with_resources(func: Function) -> Any:
+def call_with_resources(func: Types.Function) -> Any:
     kwargs = dict()
     signature = generate_signature(func)
     for item in signature:
@@ -237,11 +230,11 @@ def add_utility(name: str, obj: object):
     utilities[name] = obj
 
 
-def on_exit(func: Function):
+def on_exit(func: Types.Function):
     exec_context.add_cleanup_operation(func)
 
 
-def require_init(func: Function) -> Function:
+def require_init(func: Types.Function) -> Types.Function:
     """
     Wrapper function to ensure proper initialization before execution.
     """
@@ -346,7 +339,7 @@ def get_fixture() -> _Fixture:
 
 
 @require_init
-def register_test_results(func: Function, exc: Exception):
+def register_test_results(func: Types.Function, exc: Exception):
     global failed, errors, tests
     result = Result.OK
     tests += 1
@@ -361,7 +354,7 @@ def register_test_results(func: Function, exc: Exception):
 
 
 @require_init
-def register_module_exec_error(module_path: str, exc_type: Class, exc: Exception, tb: Traceback):
+def register_module_exec_error(module_path: str, exc_type: Types.Class, exc: Exception, tb: Types.Traceback):
     global errors, init, t_start
     errors += 1
     logger.log_module_exec_error(module_path, exc_type, exc, tb)

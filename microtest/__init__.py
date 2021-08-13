@@ -12,7 +12,6 @@ import types
 import microtest.scanner as scanner
 import microtest.core as core
 
-from microtest.data import Namespace
 from microtest.logging import DefaultLogger
 from microtest.api import *
 
@@ -32,7 +31,6 @@ def set_module_discovery_regex(regex: str):
     scanner.test_module_regex = regex
 
 
-context = Namespace()
 exec_name = 'microtest_runner'
 set_logger(DefaultLogger())
 

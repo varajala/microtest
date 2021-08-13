@@ -1,7 +1,8 @@
 import microtest
+from microtest.utils import Namespace
 
 
-namespace = microtest.Namespace()
+namespace = Namespace()
 namespace.variable = 1
 namespace.CONSTANT = 'string'
 

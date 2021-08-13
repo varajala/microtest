@@ -13,11 +13,28 @@ import io
 from typing import NewType
 
 import microtest.assertion as assertion
-from microtest.data import *
+from microtest.objects import Result, Output, Types
 
 
-Class = NewType('Class', object)
-Traceback = NewType('Traceback', object)
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    CYAN = '\033[96m'
+    RESET = '\033[0m'
+
+    if sys.platform.startswith('win'):
+        try:
+            import colorama
+            colorama.init()
+        
+        except (ModuleNotFoundError, ImportError):
+            info = '\n[ WARNING ]\n'
+            info += 'You are running on a Windows platform where ANSI colors are not natively supported.\n'
+            info += 'To enable coloring please install the colorama package: \n\n > python -m pip install colorama\n\n'
+            sys.stderr.write(info)
+
+            input('Press ENTER to continue... ')
+            GREEN = RED = CYAN = RESET = ''
 
 
 class DefaultLogger:
@@ -83,7 +100,7 @@ class DefaultLogger:
             return
 
 
-    def log_module_exec_error(self, module_path: str, exc_type: Class, exc: Exception, tb: Traceback):
+    def log_module_exec_error(self, module_path: str, exc_type: Types.Class, exc: Exception, tb: Types.Traceback):
         self.write('\nTraceback for error raised during module execution:\n', color=Colors.RED)
         self.write(self.format_traceback(exc_type, exc, tb), color=Colors.RED)
 
