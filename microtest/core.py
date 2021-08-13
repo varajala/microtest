@@ -39,28 +39,6 @@ exclude_groups = set()
 included_groups = set()
 
 
-logger_interface = (
-    ('log_start_info', list()),
-    ('log_module_info', ['module_path']),
-    ('log_test_info', ['name', 'result', 'exc']),
-    ('log_module_exec_error', ['module_path', 'exc_type', 'exc', 'tb']),
-    ('log_results', ['tests', 'failed', 'errors', 'time']),
-    ('terminate', list())
-    )
-
-
-def capture_exception(func: Types.Function) -> Types.Function:
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        error = None
-        try:
-            func(*args, **kwargs)
-        except Exception as exc:
-            error = exc
-        return error
-    return wrapper
-
-
 class _TestObject:
     def __init__(self, func: Types.Function):
         self.func = func
@@ -173,6 +151,18 @@ class _Fixture:
         raise error
 
 
+def capture_exception(func: Types.Function) -> Types.Function:
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        error = None
+        try:
+            func(*args, **kwargs)
+        except Exception as exc:
+            error = exc
+        return error
+    return wrapper
+
+
 def generate_signature(obj: object) -> list:
     func_obj = None
     if inspect.isfunction(obj) or inspect.ismethod(obj):
@@ -191,6 +181,15 @@ def generate_signature(obj: object) -> list:
 
 
 def check_logger_object(obj: object):
+    logger_interface = (
+        ('log_start_info', list()),
+        ('log_module_info', ['module_path']),
+        ('log_test_info', ['name', 'result', 'exc']),
+        ('log_module_exec_error', ['module_path', 'exc_type', 'exc', 'tb']),
+        ('log_results', ['tests', 'failed', 'errors', 'time']),
+        ('terminate', list())
+    )
+    
     for requirement in logger_interface:
         method_name, signature = requirement
         if not hasattr(obj, method_name):
@@ -212,40 +211,18 @@ def check_logger_object(obj: object):
             raise TypeError(info)
     
 
-def call_with_resources(func: Types.Function) -> Any:
-    kwargs = dict()
-    signature = generate_signature(func)
-    for item in signature:
-        if item not in resources.keys():
-            raise NameError(f'Undefined resource "{item}"')
-        kwargs[item] = resources[item]
-    return func(**kwargs)
-
-
-def add_resource(name: str, obj: object):
-    resources[name] = obj
-
-
-def add_utility(name: str, obj: object):
-    utilities[name] = obj
-
-
-def on_exit(func: Types.Function):
-    exec_context.add_cleanup_operation(func)
-
-
-def require_init(func: Types.Function) -> Types.Function:
-    """
-    Wrapper function to ensure proper initialization before execution.
-    """
-    def wrapper(*args, **kwargs):
-        if not running:
-            initialize()
-        return func(*args, **kwargs)
-    return wrapper
-
-
 def filter_tests(module: Module) -> Iterable:
+    """
+    Filter tests inside a given module based on their groups.
+
+    If included_groups is not empty, only tests with those groups are returned,
+    even if their group is in exclude_groups.
+
+    If included_group is empty, the excluded_group is checked for filters.
+
+    If the module has a fixture, the tests are passed to the fixture and
+    the fixture instance is returned.
+    """
     tests = module.tests.copy()
     if included_groups:
         tests = list(filter(lambda test: test.group in included_groups, module.tests))
@@ -276,7 +253,6 @@ def filter_modules(modules: tuple) -> tuple:
         if os.path.isabs(restriction):
             return module_path == restriction
         return restriction in module_path
-    
 
     if included_modules:
         filtered_modules = list()
@@ -296,6 +272,17 @@ def filter_modules(modules: tuple) -> tuple:
                 removed += 1
     
     return tuple(filtered_modules)
+
+
+def require_init(func: Types.Function) -> Types.Function:
+    """
+    Wrapper function to ensure proper initialization before execution.
+    """
+    def wrapper(*args, **kwargs):
+        if not running:
+            initialize()
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def initialize():
@@ -336,6 +323,28 @@ def get_fixture() -> _Fixture:
         current_module.fixture = _Fixture()
     
     return current_module.fixture
+
+
+def call_with_resources(func: Types.Function) -> Any:
+    kwargs = dict()
+    signature = generate_signature(func)
+    for item in signature:
+        if item not in resources.keys():
+            raise NameError(f'Undefined resource "{item}"')
+        kwargs[item] = resources[item]
+    return func(**kwargs)
+
+
+def add_resource(name: str, obj: object):
+    resources[name] = obj
+
+
+def add_utility(name: str, obj: object):
+    utilities[name] = obj
+
+
+def on_exit(func: Types.Function):
+    exec_context.add_cleanup_operation(func)
 
 
 @require_init

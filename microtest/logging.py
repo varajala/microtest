@@ -1,5 +1,9 @@
 """
 Default logger for microtest.
+ANSI coloring on Windows is done via colorama:
+
+https://github.com/tartley/colorama
+
 
 Author: Valtteri Rajalainen
 """
