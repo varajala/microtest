@@ -1,19 +1,21 @@
 """
-BFS for the test modules from the given root path.
+Test module discovery implementation.
 
 Author: Valtteri Rajalainen
 """
 
 import os
 import re
+from typing import Iterable
+
 
 test_module_regex = r'tests?_\w+\.py|\w+_tests?\.py|tests?\.py'
 
 
-def find_tests(root_path):
+def find_tests(root_path: str) -> tuple:
     """
-    Find all test directories starting from root_path
-    and return a tuple of found modules.
+    Do a BFS over the directory structure and add all
+    filepaths that sadisfy the is_test_module check.
     """
     modules = []
     dirs_to_scan = [root_path]
@@ -27,16 +29,16 @@ def find_tests(root_path):
             elif is_test_module(entry.name):
                 modules.append(entry.path)
     
-    return modules
+    return tuple(modules)
 
 
-def scan_directory_safely(path):
+def scan_directory_safely(path: str) -> Iterable:
     """
     Safely scan a directory.
-    Returns an empty list if any errors
+    Returns an empty iterator if any errors
     occur while scanning the directory.
     """
-    result = []
+    result = iter(list())
     try:
         result = os.scandir(path)
     except (FileNotFoundError, PermissionError, OSError):
@@ -50,5 +52,3 @@ def is_test_module(filename):
     except re.error:
         raise ValueError(f'Failed to compile regex "{test_module_regex}"')
     return re.fullmatch(exp, filename) is not None
-        
-        
