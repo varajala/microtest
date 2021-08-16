@@ -57,6 +57,64 @@ def parse_assertion_line(assertion_line: str, exc_message: str) -> Tuple[str, Un
     return assertion_line, context
 
 
+def escape_strings(assertion: str):
+    escapes = dict()
+    escape_token = ':string:'
+    index = 0
+    
+    string_re = re.compile(r"""("[^"]*")|'[^']*'""")
+    matches = re.finditer(string_re, assertion)
+    for match in matches:
+        escapes[index] = match.group()
+        index += 1
+    line, _ = re.subn(string_re, escape_token, assertion)
+
+    def reverse(parts: list) -> list:
+        results = list()
+        index = 0
+        
+        for part in parts:
+            for match in re.finditer(escape_token, part):
+                part = part.replace(escape_token, escapes[index], 1)
+                index += 1
+            results.append(part.strip())
+        return results
+    
+    return line, reverse
+
+
+def escape_comprehensions(assertion: str):
+    escapes = dict()
+    create_escape = lambda i: f':comp{i}:'
+    index = 0
+    comp_re = re.compile(r'\([^()]+\)|\[[^[\]]+\]|\{[^{}]+\}')
+    
+    line = assertion
+    match = re.search(comp_re, line)
+    while match:
+        escapes[index] = match.group()
+        line = line.replace(match.group(), create_escape(index), 1)
+        index += 1
+        match = re.search(comp_re, line)
+
+    def reverse(parts: list) -> str:
+        results = list()
+        comp_escape_re = re.compile(r':comp[0-9]+:')
+        create_index = lambda string: int(re.search(r'[0-9]+', string).group())
+        
+        for part in parts:
+            escape = re.search(comp_escape_re, part)
+            while escape:
+                escape_str = escape.group()
+                index = create_index(escape_str)
+                part = part.replace(escape_str, escapes[index], 1)
+                escape = re.search(comp_escape_re, part)
+            results.append(part.strip())
+        return results
+
+    return line, reverse
+
+
 def split_expressions(assertion: str) -> Tuple[List[str], List[str]]:
     """
     Split the expressions from the assertion line.
@@ -73,52 +131,15 @@ def split_expressions(assertion: str) -> Tuple[List[str], List[str]]:
         'assert x is not None' -> (['is', 'not'], ['x', '', 'None'])
     
     """
-    str_escapes = dict()
-    str_escape_token = ':string:'
-    str_index = 0
-
-    comp_escapes = dict()
-    comp_escape = lambda i: f':comp{i}:'
-    comp_index = 0
+    line, reverse_string_escape = escape_strings(assertion)
+    line, reverse_comp_escape = escape_comprehensions(line)
     
-    string_re = re.compile(r"""("[^"]*")|'[^']*'""")
-    comp_re = re.compile(r'\([^()]+\)|\[[^[\]]+\]|\{[^{}]+\}')
-    
-    matches = re.finditer(string_re, assertion)
-    for match in matches:
-        str_escapes[str_index] = match.group()
-        str_index += 1
-
-    line, _ = re.subn(string_re, str_escape_token, assertion)
-
-    match = re.search(comp_re, line)
-    while match:
-        comp_escapes[comp_index] = match.group()
-        line = line.replace(match.group(), comp_escape(comp_index), 1)
-        comp_index += 1
-        match = re.search(comp_re, line)
-
     operator_exp = re.compile('|'.join([ f'(?<!\\w){op}(?=\\s)' for op in OPERATORS ]))
     ops = re.findall(operator_exp, line)
-    
-    expressions = list()
-    
-    str_index = 0
     parts = re.split(operator_exp, line)
-    
-    for part in parts:
-        escape = re.search(re.compile(r':comp[0-9]+:'), part)
-        while escape:
-            index = int(re.search(r'[0-9]+', escape.group()).group())
-            part = part.replace(escape.group(), comp_escapes[index], 1)
-            escape = re.search(re.compile(r':comp[0-9]+:'), part)
 
-        escapes = re.finditer(str_escape_token, part)
-        for escape in escapes:
-            part = part.replace(str_escape_token, str_escapes[str_index], 1)
-            str_index += 1
-        
-        expressions.append(part.strip())
+    expressions = reverse_comp_escape(parts)
+    expressions = reverse_string_escape(expressions)
     return ops, expressions
 
 
