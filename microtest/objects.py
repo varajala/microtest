@@ -18,6 +18,9 @@ class Types:
     Iterable = typing.Iterable
     Any = typing.Any
 
+    Tuple = typing.Tuple
+    List = typing.List
+
 
 class Output:
     MINIMAL = 'minimal'

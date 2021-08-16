@@ -8,6 +8,7 @@ import re
 import io
 import traceback
 
+from microtest.objects import Types
 from typing import List, Tuple, Union, NewType
 
 
@@ -17,11 +18,7 @@ OPERATORS = [
     ]
 
 
-Class = NewType('Class', object)
-Traceback = NewType('Traceback', object)
-
-
-def extract_data_from_bottom_tb(traceback: Traceback):
+def extract_data_from_bottom_tb(traceback: Types.Traceback):
     """
     Find the 'root' stack frame of the traceback and return its
     globals, locals and the original linenumber where exception was raised. 
@@ -35,7 +32,7 @@ def extract_data_from_bottom_tb(traceback: Traceback):
     return globals_, locals_, bottom_tb.tb_lineno
 
 
-def parse_assertion_line(assertion_line: str, exc_message: str) -> Tuple[str, Union[str, None]]:
+def parse_assertion_line(assertion_line: str, exc_message: str) -> Types.Tuple[str, Types.Union[str, None]]:
     """
     For the given assertion line and exception message, exctract
     the assertion 'context'. Returns the raw assertion expression and the context in a tuple.
@@ -57,7 +54,13 @@ def parse_assertion_line(assertion_line: str, exc_message: str) -> Tuple[str, Un
     return assertion_line, context
 
 
-def escape_strings(assertion: str):
+def escape_strings(assertion: str) -> Types.Tuple[str, Types.Function]:
+    """
+    Escape all possible strings for correct operator splitting.
+
+    Returns the line with escaped values and a function for reversing this process.
+    Note that the reverse function takes the list of splitted expressions as input.
+    """
     escapes = dict()
     escape_token = ':string:'
     index = 0
@@ -69,7 +72,7 @@ def escape_strings(assertion: str):
         index += 1
     line, _ = re.subn(string_re, escape_token, assertion)
 
-    def reverse(parts: list) -> list:
+    def reverse(parts: list) -> Types.List[str]:
         results = list()
         index = 0
         
@@ -83,7 +86,14 @@ def escape_strings(assertion: str):
     return line, reverse
 
 
-def escape_comprehensions(assertion: str):
+def escape_comprehensions(assertion: str) -> Types.Tuple[str, Types.Function]:
+    """
+    Escape all possible list/dict/generator comprehension expressions
+    for correct operator splitting.
+
+    Returns the line with escaped values and a function for reversing this process.
+    Note that the reverse function takes the list of splitted expressions as input.
+    """
     escapes = dict()
     create_escape = lambda i: f':comp{i}:'
     index = 0
@@ -97,7 +107,7 @@ def escape_comprehensions(assertion: str):
         index += 1
         match = re.search(comp_re, line)
 
-    def reverse(parts: list) -> str:
+    def reverse(parts: list) -> Types.List[str]:
         results = list()
         comp_escape_re = re.compile(r':comp[0-9]+:')
         create_index = lambda string: int(re.search(r'[0-9]+', string).group())
@@ -115,7 +125,7 @@ def escape_comprehensions(assertion: str):
     return line, reverse
 
 
-def split_expressions(assertion: str) -> Tuple[List[str], List[str]]:
+def split_expressions(assertion: str) -> Types.Tuple[Types.List[str], Types.List[str]]:
     """
     Split the expressions from the assertion line.
     Returns a tuple of two lists: (OPERATORS, expressions).
@@ -143,7 +153,7 @@ def split_expressions(assertion: str) -> Tuple[List[str], List[str]]:
     return ops, expressions
 
 
-def resolve_assertion_error(exc_type: Class, exception: Exception, tb: Traceback) -> str:
+def resolve_assertion_error(exc_type: Types.Class, exception: Exception, tb: Types.Traceback) -> str:
     """
     Resolve the identifier values for a given AssertionError in the error message.
     """
