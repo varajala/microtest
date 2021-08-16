@@ -75,27 +75,49 @@ def split_expressions(assertion: str) -> Tuple[List[str], List[str]]:
     """
     str_escapes = dict()
     str_escape_token = ':string:'
-    index = 0
+    str_index = 0
+
+    comp_escapes = dict()
+    comp_escape = lambda i: f':comp{i}:'
+    comp_index = 0
     
     string_re = re.compile(r"""("[^"]*")|'[^']*'""")
+    comp_re = re.compile(r'\([^()]+\)|\[[^[\]]+\]|\{[^{}]+\}')
+    
     matches = re.finditer(string_re, assertion)
     for match in matches:
-        str_escapes[index] = match.group()
-        index += 1
-    
+        str_escapes[str_index] = match.group()
+        str_index += 1
+
     line, _ = re.subn(string_re, str_escape_token, assertion)
+
+    match = re.search(comp_re, line)
+    while match:
+        comp_escapes[comp_index] = match.group()
+        line = line.replace(match.group(), comp_escape(comp_index), 1)
+        comp_index += 1
+        match = re.search(comp_re, line)
 
     operator_exp = re.compile('|'.join([ f'(?<!\\w){op}(?=\\s)' for op in OPERATORS ]))
     ops = re.findall(operator_exp, line)
     
     expressions = list()
-    index = 0
+    
+    str_index = 0
     parts = re.split(operator_exp, line)
+    
     for part in parts:
+        escape = re.search(re.compile(r':comp[0-9]+:'), part)
+        while escape:
+            index = int(re.search(r'[0-9]+', escape.group()).group())
+            part = part.replace(escape.group(), comp_escapes[index], 1)
+            escape = re.search(re.compile(r':comp[0-9]+:'), part)
+
         escapes = re.finditer(str_escape_token, part)
         for escape in escapes:
-            part = part.replace(str_escape_token, str_escapes[index], 1)
-            index += 1
+            part = part.replace(str_escape_token, str_escapes[str_index], 1)
+            str_index += 1
+        
         expressions.append(part.strip())
     return ops, expressions
 
@@ -119,6 +141,8 @@ def resolve_assertion_error(exc_type: Class, exception: Exception, tb: Traceback
     #separate the actual variable names from OPERATORS
     assertion_line = match.group()
     assertion, context = parse_assertion_line(assertion_line, tb_text)
+
+    #print(assertion_line, ' -> ', assertion, context)
     ops, expressions = split_expressions(assertion)
     
     #evaluate the variables to their runtime values

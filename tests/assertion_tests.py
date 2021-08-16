@@ -74,6 +74,38 @@ class Tests(unittest.TestCase):
             result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
             self.assertTrue("assert 1 == 2" in result)
             self.assertTrue("('1 was not equal to 2', 'some other string')" in result)
+
+
+    def test_list_comp_assertion(self):
+        try:
+            assert [1, 2, 3] == [i for i in range(4)]
+        except AssertionError as err:
+            result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
+            self.assertTrue("assert [1, 2, 3] == [0, 1, 2, 3]" in result)
+
+
+    def test_generator_comp_assertion(self):
+        try:
+            assert set((1, 2, 3)) == set((i for i in range(4)))
+        except AssertionError as err:
+            result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
+            self.assertTrue("assert {1, 2, 3} == {0, 1, 2, 3}" in result)
+
+
+    def test_generator_comp_assertion(self):
+        try:
+            assert set((1, 2, 3)) == set((i for i in range(4))) if sum(set((1, 2, 3))) > 6 else False
+        except AssertionError as err:
+            result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
+            self.assertTrue("assert {1, 2, 3} == {0, 1, 2, 3} if 6 > 6 else False" in result)
+
+
+    def test_dict_comp_assertion(self):
+        try:
+            assert {'hello': 'world'} == {key: value for key, value in {'hello': 'world'}.items() if key.isupper()}
+        except AssertionError as err:
+            result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
+            self.assertTrue("assert {'hello': 'world'} == {}" in result)
         
 
 if __name__ == '__main__':

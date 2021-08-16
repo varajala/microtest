@@ -56,6 +56,24 @@ class TemporaryDirectory(tempfile.TemporaryDirectory):
             os.remove(entry.path)
 
 
+class TemporaryFile:
+    def __init__(self, **kwargs):
+        self.path, self.fd = tempfile.mkstemp(**kwargs)
+        self.closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
+    def close():
+        if not self.closed:
+            os.unlink(self.path)
+            os.close(self)
+            self.closed = True
+
+
 class UnauthorizedFile:
     """
     Context manager that temporarily removes all user permissions
@@ -152,6 +170,10 @@ def create_temp_dir(*, files=list(), dirs=list()) -> TemporaryDirectory:
     dir_ = TemporaryDirectory()
     dir_.populate(files, dirs)
     return dir_
+
+
+def create_temp_file(**kwargs) -> TemporaryDirectory:
+    return TemporaryFile(**kwargs)
 
 
 def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDirectory]:
