@@ -71,9 +71,10 @@ So the order of execution will be:
   - setup
   - reset
   - test_storing_users
+  - (other tests always followed by the reset function...)
   - cleanup
 
-If an exception is raised during setup function, the cleanup function wont be called and the execution of this module is stopped.
+> **NOTE**: If an exception is raised during setup function, the cleanup function wont be called and the execution of this module is stopped.
 
 All of these functions are optional and you can create any combination of the **setup**, **reset** and **cleanup** functions. For example you may define setup and cleanup functions, but no reset function, or define just a reset function.
 
