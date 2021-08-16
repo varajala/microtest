@@ -24,8 +24,8 @@ import sqlite3
 
 @microtest.setup
 def setup():
-    conn = sqlite.connect('database.db')
-    conn.row_factory = sqlite.Row
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
     microtest.add_resource('conn', conn)
 
 
@@ -69,6 +69,8 @@ they easily provide setup, reset and cleanup actions [here](fixtures.md).
 
 > **NOTE**: Resources are not exclusive to test functions only.
 Also other resources, setup, reset and cleanup functions can request resources.
+
+> **NOTE**: Resources are always scoped to the whole test suite: test modules can request resources from other modules. Note that the test fails if it requests a resource from a module that has not yet been executed.
 
 <br>
 
