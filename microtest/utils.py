@@ -154,22 +154,13 @@ def create_temp_dir(*, files=list(), dirs=list()) -> TemporaryDirectory:
     return dir_
 
 
-def create_temp_file(**kwargs) -> TemporaryDirectory:
-    return TemporaryFile(**kwargs)
-
-
 def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDirectory]:
     if os.path.isfile(path):
         return UnauthorizedFile(path)
     return UnauthorizedDirectory(path)
 
 
-def start_smtp_server(*,
-    port: int,
-    wait = True,
-    localhost: str = 'localhost',
-    ) -> Process:
-
+def start_smtp_server(*, port: int, wait = True, localhost: str = 'localhost') -> Process:
     def wait_for_server_init(host: tuple):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
             while True:
@@ -196,4 +187,3 @@ def start_smtp_server(*,
     if wait:
         wait_for_server_init((localhost, port))
     return Process(stream, proc)
-
