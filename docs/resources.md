@@ -1,3 +1,7 @@
+Back to [docs](index.md)...
+
+<br>
+
 ## Resources
 
 Many tests require some external entities that should be reused for efficient and fast testing.
@@ -136,3 +140,8 @@ if __name__ == '__main__':
 
 Now the **test_data** function is called every time some other component requests it, and the
 result is passed to the component requesting it.
+
+
+<br>
+
+Back to [docs](index.md)...

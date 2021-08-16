@@ -1,3 +1,7 @@
+Back to [docs](index.md)...
+
+<br>
+
 ## Fixtures
 
 [Wikipedia](https://en.wikipedia.org/wiki/Test_fixture) defines a test fixture in the following way: 
@@ -112,3 +116,8 @@ def setup():
 This sets up the Flask application instance and makes it available to all test functions in the executed modules. It also creates a temporary file where the sqlite database is created.
 
 The **call** decorator simply calls the setup function when microtest is doing configuration or running. See the [resources](resources.md) section to read more on the **add_resource** function.
+
+
+<br>
+
+Back to [docs](index.md)...

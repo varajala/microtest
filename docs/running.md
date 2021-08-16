@@ -1,3 +1,7 @@
+Back to [docs](index.md)...
+
+<br>
+
 ## Running
 
 Microtest can be used to run tests automatically in two different ways. The first way is to use the **microtest.run** function and run the python module normally as a script.
@@ -236,3 +240,8 @@ OK.
 ```
 
 As you can see microtest found all python modules matching the default test module regex and executed all tests inside them.
+
+
+<br>
+
+Back to [docs](index.md)...

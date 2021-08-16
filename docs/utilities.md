@@ -1,3 +1,7 @@
+Back to [docs](index.md)...
+
+<br>
+
 ## Utilities
 
 It is very common for Python projects to have the following structure:
@@ -10,20 +14,20 @@ project
 ├── README
 ├── LICENSE
 └── setup.py
-
 ```
 
-Here the actual code is inside the project/project directory and the tests are in separate project/tests directory.
+Here the actual code is inside the project/project directory and the tests are in separate project/tests directory. This means that the tests are not part of the main Python package.
+
 For smaller projects tests usually fit inside a single directory, but when the project grows larger
 usually the tests are split into more than one directory. This means that if you want to share code
-between test modules, you have to install the tests as a separate Python package for import to work (or hack sys.path...).
+between test modules, you have to install the tests as a separate Python package (or hack sys.path...) for importing to work.
 
 Microtest aims to prevent this by providing a separate configuration step before the actual testing.
 Here you can execute arbitrary Python code for defining utilites, setting up shared resources, etc.
 These objects can then be shared between all tested modules with two microtest's tools:
 [resources](resources.md) and utilities.
 
-Utilities are meant to replace Pythons **import** statement. When you add an object as a utility, microtest will insert it into a dictionary and this dictionary will be used as the global namespace
+Utilities are meant to replace Python's **import** statement. When you add an object as a utility, microtest will insert it into a dictionary and this dictionary will be used as the global namespace
 that the test modules are executed.
 
 To add an object as utility, use the **microtest.utility** function. This can be used as a decorator
@@ -72,3 +76,7 @@ microtest.utility(reset_database, name='foo')
 ```
 
 Now the **reset_database** function object would be accessible under the identifier 'foo'.
+
+<br>
+
+Back to [docs](index.md)...
