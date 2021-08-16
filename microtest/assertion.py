@@ -1,5 +1,5 @@
 """
-Functions for resolving variable values in AssertionError tracebacks.
+Functions for resolving runtime variable values in AssertionError tracebacks.
 
 Author: Valtteri Rajalainen
 """
@@ -32,15 +32,15 @@ def extract_data_from_bottom_tb(traceback: Types.Traceback):
     return globals_, locals_, bottom_tb.tb_lineno
 
 
-def parse_assertion_line(assertion_line: str, exc_message: str) -> Types.Tuple[str, Types.Union[str, None]]:
+def separate_assertion_context(assertion_line: str, exc_message: str) -> Types.Tuple[str, Types.Union[str, None]]:
     """
     For the given assertion line and exception message, exctract
     the assertion 'context'. Returns the raw assertion expression and the context in a tuple.
 
     Example:
 
-        'assert x == 10, ("X is not 10!", x)' -> ('assert x == 10', '("X is not 10", x)')
-        'assert x == 10 -> ('assert x == 10', None)
+        "assert x == 10, ("X is not 10!", x)" -> ('assert x == 10', '("X is not 10", x)')
+        "assert x == 10" -> ('assert x == 10', None)
 
     """
     exc_context_exp = re.compile(r'(?<=AssertionError: )[^\n]+')
@@ -125,7 +125,7 @@ def escape_comprehensions(assertion: str) -> Types.Tuple[str, Types.Function]:
     return line, reverse
 
 
-def split_expressions(assertion: str) -> Types.Tuple[Types.List[str], Types.List[str]]:
+def separate_operators_and_expressions(assertion: str) -> Types.Tuple[Types.List[str], Types.List[str]]:
     """
     Split the expressions from the assertion line.
     Returns a tuple of two lists: (OPERATORS, expressions).
@@ -167,19 +167,18 @@ def resolve_assertion_error(exc_type: Types.Class, exception: Exception, tb: Typ
     match = re.search(assert_exp, tb_text)
     if match is None:
         return f'\nAssertionError on line {lineno}.\n\n'
-
-    #exctract the optional user provided 'context' for this assertion
-    #separate the actual variable names from OPERATORS
     assertion_line = match.group()
-    assertion, context = parse_assertion_line(assertion_line, tb_text)
-
-    #print(assertion_line, ' -> ', assertion, context)
-    ops, expressions = split_expressions(assertion)
     
-    #evaluate the variables to their runtime values
-    values = [ eval(expression, globals_, locals_) if expression else ':blank:' for expression in expressions]
+    assertion, context = separate_assertion_context(assertion_line, tb_text)
+    ops, expressions = separate_operators_and_expressions(assertion)
     
-    #write error msg with resolve values
+    #evaluate the parsed expressions to their runtime values
+    #return a generic message if fails for some reason
+    try:
+        values = [ eval(expression, globals_, locals_) if expression else ':blank:' for expression in expressions]
+    except Exception:
+        return f'\nAssertionError on line {lineno}.\n\n'
+    
     buffer = io.StringIO()
     buffer.write(f'\nAssertionError on line {lineno}:\n')
     buffer.write('assert ')
