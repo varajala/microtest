@@ -69,6 +69,10 @@ class _TestObject:
 
 
 class _Fixture:
+    """
+    Iterable container that ensures the right
+    execution order for setup/reset/cleanup/test functions.
+    """
 
     def __init__(self):
         self._setup = None
@@ -87,21 +91,21 @@ class _Fixture:
     def register_setup(self, func: Types.Function):
         if self._setup:
             info = 'Setup function is already set for this module'
-            raise RuntimeError()
+            raise RuntimeError(info)
         self._setup = capture_exception(func)
 
 
     def register_cleanup(self, func: Types.Function):
         if self._cleanup:
             info = 'Cleanup function is already set for this module'
-            raise RuntimeError()
+            raise RuntimeError(info)
         self._cleanup = capture_exception(func)
 
 
     def register_reset(self, func: Types.Function):
         if self._reset:
             info = 'Reset function is already set for this module'
-            raise RuntimeError()
+            raise RuntimeError(info)
         self._reset = capture_exception(func)
 
 
@@ -208,6 +212,14 @@ def get_fixture() -> _Fixture:
 
 
 def call_with_resources(func: Types.Function) -> Types.Any:
+    """
+    Call the given function with the resources named in
+    function arguments.
+
+    Note that functools.wraps should be used when wrapping microtest.core._TestObjects,
+    otherwise the wrapper function's signature must match with the original
+    test function's signature.
+    """
     kwargs = dict()
     signature = generate_signature(func)
     for item in signature:
