@@ -3,7 +3,14 @@ import os
 from microtest.docs import generate_docs
 
 
-def main(args):
+def run_from_commandline(args):
+    """
+    Generate docs via the command line.
+
+    $ python -m microtest.docs [pkg_path] [docs_path]
+
+    Args is excpected to be in the format: sys.argv[1:]
+    """
     if len(args) != 2:
         print('\n == Python doc generator ==\n')
         print('Usage: [ package_root_folder ] [ docs_folder ]\n\n')
@@ -27,4 +34,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    run_from_commandline(sys.argv[1:])
