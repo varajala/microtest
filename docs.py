@@ -119,9 +119,6 @@ def generate_member_docs(name: str, value: object, stream, *, indent = 0):
         
         stream.write('\n')
     
-    else:
-        print(name, value)
-
 
 def generate_func_docs(func, stream, *, indent = 0):
     source_lines, _ = inspect.getsourcelines(func)
@@ -177,8 +174,6 @@ def generate_class_docs(class_, stream):
     class_items = vars(class_).items()
     methods = tuple((obj for _, obj in class_items if is_documented_method(obj)))
     members = { name: value for name, value in class_items if value not in set(methods) and not name.startswith('_') }
-
-    print('members: ', members)
 
     for name, value in members.items():
         generate_member_docs(name, value, stream, indent = 1)

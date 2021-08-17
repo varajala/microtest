@@ -1,7 +1,6 @@
 ## microtest.scanner
 
 ```python
-Iterable: object
 test_module_regex: 'tests?_\\w+\\.py|\\w+_tests?\\.py|tests?\\.py'
 
 
@@ -11,7 +10,7 @@ def find_tests(root_path: str) -> tuple:
   filepaths that sadisfy the is_test_module check.
   """
 
-def scan_directory_safely(path: str) -> Iterable:
+def scan_directory_safely(path: str) -> Types.Iterable:
   """
   Safely scan a directory.
   Returns an empty iterator if any errors
