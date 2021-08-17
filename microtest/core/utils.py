@@ -25,6 +25,14 @@ def capture_exception(func: Types.Function) -> Types.Function:
 
 
 def generate_signature(obj: object) -> list:
+    """
+    Generate a list of argument names from the function signature.
+
+    The provided object must be a function method or a wrapper object
+    with the actual function object available as obj.func attribute.
+    
+    TypeError is raised if these restrictions aren\'t met.
+    """
     func_obj = None
     if inspect.isfunction(obj) or inspect.ismethod(obj):
         func_obj = obj
@@ -33,8 +41,12 @@ def generate_signature(obj: object) -> list:
         func_obj = obj.func
 
     if func_obj is None:
-        info = 'Cannot generate signature for object that is not '
-        info += 'a function, method or microtest.core._TestObject instance.'
+        info = '\n'.join([
+            'Failed to create a function signature.',
+            'The provided object must be a function, method',
+            'or some wrapper object with the actual',
+            'function object available as object.func attribute...',
+            ])
         raise TypeError(info)
     
     signature = inspect.signature(func_obj)
