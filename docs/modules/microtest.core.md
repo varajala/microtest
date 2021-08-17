@@ -101,15 +101,6 @@ def add_utility(name: str, obj: object):
 def on_exit(func: Types.Function):
   pass
 
-def wrapper(*args, **kwargs):
-  pass
-
-def wrapper(*args, **kwargs):
-  pass
-
-def wrapper(*args, **kwargs):
-  pass
-
 def run_current_module():
   pass
 

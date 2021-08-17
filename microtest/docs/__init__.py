@@ -66,6 +66,9 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
     def is_member(obj):
         return obj.__module__ == module.__name__
 
+    def is_not_local_function(obj):
+        return 'locals' not in repr(obj)
+
     def filter_classes(dict_):
         classes = list()
         for key, obj in dict_.copy().items():
@@ -76,7 +79,7 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
     def filter_functions(dict_):
         functions = list()
         for key, obj in dict_.copy().items():
-            if inspect.isfunction(obj) and is_member(obj):
+            if inspect.isfunction(obj) and is_member(obj) and is_not_local_function(obj):
                 functions.append(dict_.pop(key))
         return tuple(functions)
 
