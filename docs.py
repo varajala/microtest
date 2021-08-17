@@ -9,14 +9,6 @@ from types import ModuleType
 INDENT = '  '
 
 
-def generate_filepath(module_name: str) -> str:
-    base = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base, 'docs')
-    path = os.path.join(path, 'modules')
-    path = os.path.join(path, module_name + '.md')
-    return path
-
-
 def find_modules(pkg_root_path: str) -> tuple:
     if '__init__.py' not in { entry.name for entry in os.scandir(pkg_root_path) }:
         info = 'This path can\'t be a package root directory, it doesn\'t contain "__init__.py" file...'
@@ -52,20 +44,44 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
         stream.write('## ')
     
     stream.write(module.__name__)
-    stream.write('\n')
+    stream.write('\n\n')
 
     if markdown:
         stream.write('```python\n')
     
-    for obj in (value for attr, value in vars(module).items() if not attr.startswith('_')):
-        if inspect.isclass(obj) and obj.__module__ == module.__name__:
-            stream.write(generate_class_docs(obj))
+    def is_member(obj):
+        return obj.__module__ == module.__name__
 
-        elif inspect.isfunction(obj) and obj.__module__ == module.__name__:
-            stream.write(generate_func_docs(obj))
+    def filter_classes(dict_):
+        classes = list()
+        for key, obj in dict_.copy().items():
+            if inspect.isclass(obj) and is_member(obj):
+                classes.append(dict_.pop(key))
+        return tuple(classes)
+
+    def filter_functions(dict_):
+        functions = list()
+        for key, obj in dict_.copy().items():
+            if inspect.isfunction(obj) and is_member(obj):
+                functions.append(dict_.pop(key))
+        return tuple(functions)
+
+    module_items = { attr: value for attr, value in vars(module).items() if not attr.startswith('_') }
+    classes = filter_classes(module_items)
+    functions = filter_functions(module_items)
+
+    for name, value in module_items.items():
+        generate_member_docs(name, value, stream)
+
+    for class_ in classes:
+        generate_class_docs(class_, stream)
+
+    for func in functions:
+        generate_func_docs(func, stream)
+
 
     if markdown:
-        stream.write('```\n')
+        stream.write('```\n\n')
 
     stream.seek(0)
     data = stream.read()
@@ -73,7 +89,17 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
     return data
 
 
-def generate_func_docs(func):
+def generate_member_docs(name: str, value: object, stream, *, indent = 0):
+    # if not name.startswith('_'):
+    #     stream.write(indent * INDENT)
+    #     stream.write(name)
+    #     stream.write(' = ')
+    #     stream.write(repr(value))
+    #     stream.write('\n')
+    pass
+
+
+def generate_func_docs(func, stream, *, indent = 0):
     source_lines, _ = inspect.getsourcelines(func)
     index = 0
     for line in source_lines:
@@ -81,44 +107,79 @@ def generate_func_docs(func):
         if line.strip().startswith('def '):
             break
     
-    function_def = '\n'.join(( line.strip() for line in source_lines[0:index]))
+    for line in source_lines[0:index]:
+        stream.write(indent * INDENT)
+        stream.write(line.strip())
+        stream.write('\n')
     
     docs = inspect.getdoc(func)
     if docs:
-        parts = [ INDENT + line for line in docs.splitlines(True) ]
-        parts.insert(0, f'\n{INDENT}"""\n')
-        parts.insert(0, function_def)
-        parts.append(f'\n{INDENT}"""\n\n')
-        return ''.join(parts)
-    return function_def + f'\n{INDENT}pass\n\n\n'
+        stream.write((indent + 1)* INDENT)
+        stream.write('"""\n')
+        for line in docs.splitlines(True):
+            stream.write((indent + 1)* INDENT)
+            stream.write(line)
+            stream.write('\n')
+        stream.write((indent + 1)* INDENT)
+        stream.write('"""\n\n')
+        return
+    
+    stream.write((indent + 1)* INDENT)
+    stream.write('pass\n\n')
         
 
+def generate_class_docs(class_, stream):
+    stream.write('class ')
+    stream.write(class_.__name__)
+    stream.write(':\n')
 
-def generate_class_docs(class_):
-    parts = list()
-    parts.append('class ' + class_.__name__ + ':\n')
+    start_pos = stream.tell()
 
     docs = inspect.getdoc(class_)
     if docs:
-        parts.append(f'{INDENT}"""\n')
+        stream.write(INDENT)
+        stream.write('"""\n')
         for line in docs.splitlines(True):
-            parts.append(f'{INDENT}{line}\n')
-        parts.append(f'{INDENT}"""\n\n')
+            stream.write(INDENT)
+            stream.write(line)
+            stream.write('\n')
+        stream.write(INDENT)
+        stream.write('"""\n\n')
 
-    for obj in (value for attr, value in vars(class_).items() if attr != '__init__'):
-        if inspect.ismethod(obj) or inspect.isfunction(obj):
-            parts.extend([INDENT + line for line in generate_func_docs(obj).splitlines(True)])
-    
-    return ''.join(parts)
+    def is_documented_method(obj):
+        is_method =  inspect.ismethod(obj) or inspect.isfunction(obj)
+        return is_method and obj.__name__ != '__init__'
+
+    class_items = vars(class_).items()
+    methods = tuple((obj for _, obj in class_items if is_documented_method(obj)))
+    members = { name: value for name, value in class_items if value not in set(methods) and not name.startswith('_') }
+
+    for name, value in members.items():
+        generate_member_docs(name, value, stream, indent = 1)
+
+    for method in methods:
+        generate_func_docs(method, stream, indent = 1)
+
+    pos = stream.tell()
+    if pos == start_pos:
+        stream.write('\n')
 
 
+def generate_docs(pkg_root_path: str, docs_directory: str, *, markdown=True):
+    def generate_doc_filepath(module_name: str) -> str:
+        path = os.path.join(docs_directory, module_name)
+        if markdown:
+            path += '.md'
+        return path
 
-def generate_docs(pkg_root_path: str):
     for name, path in find_modules(pkg_root_path):
         importlib.import_module(name)
         module = sys.modules[name]
-        generate_module_docs(module, path=generate_filepath(module.__name__))
+        generate_module_docs(module, markdown=markdown, path=generate_doc_filepath(name))
 
 
 if __name__ == '__main__':
-    generate_docs('/home/varajala/dev/py/microtest/microtest')
+    generate_docs(
+        '/home/varajala/dev/py/microtest/microtest',
+        '/home/varajala/dev/py/microtest/docs/modules'
+        )
