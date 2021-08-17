@@ -1,29 +1,12 @@
 import inspect
 import io
 import os
-
-import microtest
-import microtest.api
-import microtest.core
-import microtest.objects
-import microtest.assertion
-import microtest.logging
-import microtest.scanner
-import microtest.utils
+import sys
+import importlib
+from types import ModuleType
 
 
 INDENT = '  '
-
-modules = (
-    microtest,
-    microtest.api,
-    microtest.core,
-    microtest.objects,
-    microtest.assertion,
-    microtest.logging,
-    microtest.scanner,
-    microtest.utils,
-)
 
 
 def generate_filepath(module_name: str) -> str:
@@ -34,7 +17,36 @@ def generate_filepath(module_name: str) -> str:
     return path
 
 
-def generate_docs(module: object, *, markdown=True, path=None):
+def find_modules(pkg_root_path: str) -> tuple:
+    if '__init__.py' not in { entry.name for entry in os.scandir(pkg_root_path) }:
+        info = 'This path can\'t be a package root directory, it doesn\'t contain "__init__.py" file...'
+        raise ValueError(info)
+    
+    def create_module_name(pkg_name: str, path: str) -> str:
+        name, _ = os.path.splitext(os.path.basename(path))
+        return pkg_name + '.' + name if name != '__init__' else pkg_name
+
+    def create_pkg_name(parent_pkg: str, path: str) -> str:
+        return parent_pkg + '.' + os.path.basename(path)
+
+    def handle_pkg(path: str, pkg_name: str, modules: list):
+        for entry in os.scandir(path):
+            if entry.is_dir() and '__init__.py' in { entry.name for entry in os.scandir(entry.path) }:
+                handle_pkg(entry.path, create_pkg_name(pkg_name, entry.path), modules)
+            
+            elif entry.path.endswith('__main__.py'):
+                continue
+
+            elif entry.path.endswith('.py'):
+                path = os.path.abspath(entry.path)
+                modules.append((create_module_name(pkg_name, path), path))
+
+    modules = list()
+    handle_pkg(pkg_root_path, os.path.basename(pkg_root_path), modules)
+    return tuple(modules)
+
+
+def generate_module_docs(module: object, *, markdown=True, path=None):
     stream = io.StringIO() if path is None else open(path, 'w+')
     if markdown:
         stream.write('## ')
@@ -100,6 +112,13 @@ def generate_class_docs(class_):
     return ''.join(parts)
 
 
+
+def generate_docs(pkg_root_path: str):
+    for name, path in find_modules(pkg_root_path):
+        importlib.import_module(name)
+        module = sys.modules[name]
+        generate_module_docs(module, path=generate_filepath(module.__name__))
+
+
 if __name__ == '__main__':
-    for module in modules:
-        generate_docs(module, path=generate_filepath(module.__name__))
+    generate_docs('/home/varajala/dev/py/microtest/microtest')
