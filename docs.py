@@ -1,3 +1,10 @@
+"""
+Find all Python modules inside a package structure and generate
+simple docs from these modules.
+
+Author: Valtteri Rajalainen
+"""
+
 import inspect
 import io
 import os
@@ -10,6 +17,13 @@ INDENT = '  '
 
 
 def find_modules(pkg_root_path: str) -> tuple:
+    """
+    Recursively find all sub packages and modules.
+    Raises ValueError if the provided directory path
+    doesn\'t include a file called "__init__.py".
+
+    Discards files called "__main__.py".
+    """
     if '__init__.py' not in { entry.name for entry in os.scandir(pkg_root_path) }:
         info = 'This path can\'t be a package root directory, it doesn\'t contain "__init__.py" file...'
         raise ValueError(info)
@@ -191,6 +205,13 @@ def generate_class_docs(class_, stream):
 
 
 def generate_docs(pkg_root_path: str, docs_directory: str, *, markdown=True):
+    """
+    Generate documentation files from modules inside the given package.
+    Doc files will be named after the found modules and '.md' suffix
+    will be added if the markdown flag is set.
+
+    Both filepaths should be absolute.
+    """
     def generate_doc_filepath(module_name: str) -> str:
         path = os.path.join(docs_directory, module_name)
         if markdown:
@@ -203,8 +224,28 @@ def generate_docs(pkg_root_path: str, docs_directory: str, *, markdown=True):
         generate_module_docs(module, markdown=markdown, path=generate_doc_filepath(name))
 
 
+def main(args):
+    if len(args) != 2:
+        print('\n == Python doc generator ==\n')
+        print('Usage: [ package_root_folder ] [ docs_folder ]\n\n')
+        print('package_root_folder:  A filepath to the packages "topmost" folder.')
+        print('                      This contains the __init__.py - file.')
+        print()
+        print('docs_folder:          A filepath to the folder where the generated docs will be written.')
+        print()
+        return
+    
+    cwd = os.getcwd()
+    pkg_path, docs_path = args
+    
+    if not os.path.isabs(pkg_path):
+        pkg_path = os.path.join(cwd, pkg_path)
+
+    if not os.path.isabs(docs_path):
+        docs_path = os.path.join(cwd, docs_path)
+
+    generate_docs(pkg_path, docs_path)
+
+
 if __name__ == '__main__':
-    generate_docs(
-        '/home/varajala/dev/py/microtest/microtest',
-        '/home/varajala/dev/py/microtest/docs/modules'
-        )
+    main(sys.argv[1:])
