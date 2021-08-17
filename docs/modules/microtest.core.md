@@ -87,7 +87,7 @@ def call_with_resources(func: Types.Function) -> Types.Any:
   Call the given function with the resources named in
   function arguments.
   
-  Note that functools.wraps should be used when wrapping microtest.core._TestObjects,
+  Note that functools.wraps should be used when wrapping microtest.core.TestObjects,
   otherwise the wrapper function's signature must match with the original
   test function's signature.
   """

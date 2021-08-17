@@ -5,13 +5,12 @@ Author: Valtteri Rajalainen
 """
 
 import typing
-from types import TracebackType, FunctionType
 
 
 class Types:
-    Function = typing.NewType('function', FunctionType)
-    Class = typing.NewType('Class', type)
-    Traceback = typing.NewType('Traceback', TracebackType)
+    Function = typing.Any
+    Class = typing.Any
+    Traceback = typing.Any
     
     Callable = typing.Callable
     Union = typing.Union
@@ -20,7 +19,6 @@ class Types:
 
     Tuple = typing.Tuple
     List = typing.List
-
 
 class Output:
     MINIMAL = 'minimal'

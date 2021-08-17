@@ -8,10 +8,12 @@ class Colors:
   RED: '\x1b[91m'
   CYAN: '\x1b[96m'
   RESET: '\x1b[0m'
+
 class DefaultLogger:
   MAX_WIDTH: 120
   MIN_WIDTH: 60
   DEFAULT_WIDTH: 75
+
   def write(self, text: str, *, color = None):
     pass
 

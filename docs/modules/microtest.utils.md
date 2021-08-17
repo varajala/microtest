@@ -30,6 +30,7 @@ class TemporaryDirectory:
   in it are removed.
   """
   path: object
+
   def populate(self, files=list(), dirs=list()):
     pass
 
@@ -49,6 +50,7 @@ class UnauthorizedFile:
   """
   NO_PERMISSIONS: 0
   NO_RW_PERMISSION: 64
+
   def __enter__(self):
     pass
 
@@ -65,6 +67,7 @@ class UnauthorizedDirectory:
   $ chmod u-rwx directory
   """
   NO_PERMISSIONS: 0
+
   def __enter__(self):
     pass
 
@@ -73,6 +76,7 @@ class UnauthorizedDirectory:
 
 class Process:
   running: object
+
   def read_output(self, *, read_all=False):
     pass
 

@@ -118,6 +118,9 @@ def generate_member_docs(name: str, value: object, stream, *, indent = 0):
             stream.write('object')
         
         stream.write('\n')
+    
+    else:
+        print(name, value)
 
 
 def generate_func_docs(func, stream, *, indent = 0):
@@ -175,8 +178,13 @@ def generate_class_docs(class_, stream):
     methods = tuple((obj for _, obj in class_items if is_documented_method(obj)))
     members = { name: value for name, value in class_items if value not in set(methods) and not name.startswith('_') }
 
+    print('members: ', members)
+
     for name, value in members.items():
         generate_member_docs(name, value, stream, indent = 1)
+
+    if len(members) > 0:
+        stream.write('\n')
 
     for method in methods:
         generate_func_docs(method, stream, indent = 1)
