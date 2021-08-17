@@ -9,7 +9,6 @@ import io
 import traceback
 
 from microtest.objects import Types
-from typing import List, Tuple, Union, NewType
 
 
 OPERATORS = [

@@ -72,6 +72,7 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
 
     for name, value in module_items.items():
         generate_member_docs(name, value, stream)
+    stream.write('\n\n')
 
     for class_ in classes:
         generate_class_docs(class_, stream)
@@ -90,13 +91,33 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
 
 
 def generate_member_docs(name: str, value: object, stream, *, indent = 0):
-    # if not name.startswith('_'):
-    #     stream.write(indent * INDENT)
-    #     stream.write(name)
-    #     stream.write(' = ')
-    #     stream.write(repr(value))
-    #     stream.write('\n')
-    pass
+    type_checks = (
+        inspect.ismodule(value),
+        inspect.isfunction(value),
+        inspect.isclass(value)
+        )
+
+    containers = { dict, list, set, tuple }
+    builtins = { str, float, int, bytes, bool }
+
+    if not any(type_checks):
+        stream.write(indent * INDENT)
+        stream.write(name)
+        stream.write(': ')
+        
+        if value.__class__ in builtins:
+            stream.write(repr(value))
+
+        elif value is None:
+            stream.write('None')
+
+        elif value.__class__ in containers:
+            stream.write(repr(value) if value else value.__class__.__name__)
+
+        else:
+            stream.write('object')
+        
+        stream.write('\n')
 
 
 def generate_func_docs(func, stream, *, indent = 0):
@@ -119,7 +140,7 @@ def generate_func_docs(func, stream, *, indent = 0):
         for line in docs.splitlines(True):
             stream.write((indent + 1)* INDENT)
             stream.write(line)
-            stream.write('\n')
+        stream.write('\n')
         stream.write((indent + 1)* INDENT)
         stream.write('"""\n\n')
         return
@@ -142,9 +163,9 @@ def generate_class_docs(class_, stream):
         for line in docs.splitlines(True):
             stream.write(INDENT)
             stream.write(line)
-            stream.write('\n')
+        stream.write('\n')
         stream.write(INDENT)
-        stream.write('"""\n\n')
+        stream.write('"""\n')
 
     def is_documented_method(obj):
         is_method =  inspect.ismethod(obj) or inspect.isfunction(obj)
@@ -162,7 +183,8 @@ def generate_class_docs(class_, stream):
 
     pos = stream.tell()
     if pos == start_pos:
-        stream.write('\n')
+        stream.write(INDENT)
+        stream.write('pass\n\n')
 
 
 def generate_docs(pkg_root_path: str, docs_directory: str, *, markdown=True):

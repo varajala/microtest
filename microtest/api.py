@@ -40,8 +40,8 @@ __all__ = [
     ]
 
 
-def test(func: Types.Function) -> core._TestObject:
-    test_obj = core._TestObject(func)
+def test(func: Types.Function) -> core.TestObject:
+    test_obj = core.TestObject(func)
     core.collect_test(test_obj)
     return test_obj
 

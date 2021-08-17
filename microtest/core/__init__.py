@@ -44,7 +44,7 @@ excluded_groups = set()
 included_groups = set()
 
 
-class _TestObject:
+class TestObject:
     def __init__(self, func: Types.Function):
         self.func = func
         self.group = None
@@ -68,7 +68,7 @@ class _TestObject:
         register_test_results(self, error)
 
 
-class _Fixture:
+class Fixture:
     """
     Iterable container that ensures the right
     execution order for setup/reset/cleanup/test functions.
@@ -84,7 +84,7 @@ class _Fixture:
         self.error = None
 
 
-    def append(self, test: _TestObject):
+    def append(self, test: TestObject):
         self.tests.append(test)
 
 
@@ -113,7 +113,7 @@ class _Fixture:
         return self
 
 
-    def __next__(self) -> _TestObject:
+    def __next__(self) -> TestObject:
         if not self.setup_done:
             self.do_setup()
         
@@ -193,20 +193,20 @@ def stop_testing(*args):
     logger.terminate()
 
 
-def collect_test(test_obj: _TestObject):
+def collect_test(test_obj: TestObject):
     global current_module
     if current_module is None:
         current_module = Module('__main__')
     current_module.tests.append(test_obj)
 
 
-def get_fixture() -> _Fixture:
+def get_fixture() -> Fixture:
     global current_module
     if current_module is None:
         current_module = Module('__main__')
     
     if not current_module.fixture:
-        current_module.fixture = _Fixture()
+        current_module.fixture = Fixture()
     
     return current_module.fixture
 
@@ -216,7 +216,7 @@ def call_with_resources(func: Types.Function) -> Types.Any:
     Call the given function with the resources named in
     function arguments.
 
-    Note that functools.wraps should be used when wrapping microtest.core._TestObjects,
+    Note that functools.wraps should be used when wrapping microtest.core.TestObjects,
     otherwise the wrapper function's signature must match with the original
     test function's signature.
     """
