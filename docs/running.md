@@ -123,6 +123,16 @@ This can be changed during the config phase by changing the regex that is respon
 
 It is also possible to filter modules by the path and test functions by adding them in a group. Again, more on this in the [config](config.md) section.
 
+<br>
+
+> **NOTE**: Modules are discovered using breadth-first-search. This means that modules higher in
+the directory hierachy are excecuted before modules that are lower in the directory hierarchy.
+**This can be relied on.**
+
+> **NOTE**: Modules inside the same directory are executed in the order dependent on the underlying filesystem, they are not sorted in any way. **You should not rely on any particular order of execution of modules inside the same directory**.
+
+<br>
+
 Let's take a look on how the output looks when executing tests inside a directory structure. As an example here's a test directory of a Flask application I have built:
 
 ```
