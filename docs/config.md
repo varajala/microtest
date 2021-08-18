@@ -457,14 +457,6 @@ class TestClient:
             return object.__getattribute__(client, attr)
 
 
-    def __enter__(self):
-        return self.client.__enter__()
-
-
-    def __exit__(self, exc_type, exc, tb):
-        self.client.__exit__(exc_type, exc, tb)
-
-
 @microtest.call
 def setup():
     fd, path = tempfile.mkstemp()
