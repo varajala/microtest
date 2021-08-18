@@ -7,7 +7,7 @@
 - [Resources](resources.md)
 - [Utilites](utilities.md)
 - [Config](config.md)
-- [Other Features](other-features.md)
+- [Tools](tools.md)
 
 <br>
 
@@ -22,4 +22,4 @@
 - [microtest.logging](modules/microtest.logging.md)
 - [microtest.objects](modules/microtest.objects.md)
 - [microtest.scanner](modules/microtest.scanner.md)
-    
+- [microtest.utils](modules/microtest.utils.md)

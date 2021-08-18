@@ -10,6 +10,8 @@ import sys
 import shutil
 import tempfile
 import subprocess as subp
+import multiprocessing as mp
+import wsgiref.simple_server
 import time
 import socket
 
@@ -160,30 +162,48 @@ def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, Unauthorized
     return UnauthorizedDirectory(path)
 
 
-def start_smtp_server(*, port: int, wait = True, localhost: str = 'localhost') -> Process:
-    def wait_for_server_init(host: tuple):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
-            while True:
-                try:
-                    soc.connect(host)
-                
-                except OSError:
-                    time.sleep(0.1)
-                    continue
-                
-                else:
-                    soc.close()
-                    break
+def _wait_for_server_init(host: tuple):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as soc:
+        while True:
+            try:
+                soc.connect(host)
+            
+            except OSError:
+                time.sleep(0.1)
+                continue
+            
+            else:
+                soc.close()
+                break
 
+
+def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Process:
     if not sys.executable:
         raise RuntimeError('Can\'t find the Python executable (sys.exectuable is None or "")')
     
-    host_str = ':'.join([localhost, str(port)])
+    host_str = ':'.join([host, str(port)])
     cmd = [sys.executable, '-u', '-m', 'smtpd', '-c', 'DebuggingServer', '-n', host_str]
     
     stream = tempfile.TemporaryFile(mode='w+')
-    proc = subp.Popen(cmd, stdout=stream)
+    proc = subp.Popen(cmd, stdout=stream, stderr=stream)
 
     if wait:
-        wait_for_server_init((localhost, port))
+        _wait_for_server_init((host, port))
     return Process(stream, proc)
+
+
+def start_wsgi_server(wsgi_app: object, *, port: int, host = 'localhost', wait = True) -> Process:
+    def run_server(host, port, wsgi_app, stream):
+        sys.stdout = sys.stderr = stream
+        with wsgiref.simple_server.make_server(host, port, wsgi_app) as server:
+            server.serve_forever()
+
+
+    stream = tempfile.TemporaryFile(mode='w+')
+    proc = mp.Process(target=run_server, args=(host, port, wsgi_app, stream))
+    proc.start()
+
+    if wait:
+        _wait_for_server_init((host, port))
+    return Process(stream, proc)
+

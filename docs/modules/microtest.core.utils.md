@@ -23,11 +23,11 @@ def generate_signature(obj: object) -> list:
 def check_logger_object(obj: object):
   pass
 
-def filter_tests(module: Module, included_groups: set, excluded_groups: set) -> Types.Iterable:
+def filter_tests(module: Module, only_groups: set, excluded_groups: set) -> Types.Iterable:
   """
   Filter tests inside a given module based on their groups.
   
-  If included_groups is not empty, only tests with those groups are returned,
+  If only_groups is not empty, only tests with those groups are returned,
   even if their group is in exclude_groups.
   
   If included_group is empty, the excluded_group is checked for filters.
@@ -36,7 +36,7 @@ def filter_tests(module: Module, included_groups: set, excluded_groups: set) -> 
   the fixture instance is returned.
   """
 
-def filter_modules(modules: tuple, included_modules: set, excluded_modules: set) -> tuple:
+def filter_modules(modules: tuple, only_modules: set, excluded_modules: set) -> tuple:
   """
   Filter the executed modules based on inlcuded_modules and exclude_modules.
   
@@ -44,7 +44,7 @@ def filter_modules(modules: tuple, included_modules: set, excluded_modules: set)
   If the restriction is an absolute filepath the paths are comapred with '=='.
   Otherwise the comaprison will be 'restriction in path' (path is an absolute filepath).
   
-  If included_modules is not empty only those modules will be executed,
+  If only_modules is not empty only those modules will be executed,
   even if exclude_modules is not empty.
   
   If exclude_modules is not empty these modules will be filtered out.

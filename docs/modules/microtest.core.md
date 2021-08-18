@@ -20,9 +20,9 @@ tests: 0
 t_start: None
 t_end: None
 excluded_modules: set
-included_modules: set
+only_modules: set
 excluded_groups: set
-included_groups: set
+only_groups: set
 
 
 class TestObject:

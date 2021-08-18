@@ -96,7 +96,10 @@ def create_temp_dir(*, files=list(), dirs=list()) -> TemporaryDirectory:
 def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDirectory]:
   pass
 
-def start_smtp_server(*, port: int, wait = True, localhost: str = 'localhost') -> Process:
+def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Process:
+  pass
+
+def start_wsgi_server(wsgi_app: object, *, port: int, host = 'localhost', wait = True) -> Process:
   pass
 
 ```
