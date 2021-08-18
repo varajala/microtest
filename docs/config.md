@@ -73,8 +73,15 @@ When executing the cinfig script it will always be the default value.
 
 It can be useful to set this to something else, for example when running tests built with unittest.
 Here's an excerpt from the microtest's own tests:
+```python
+#in main.py
+import microtest
+
+microtest.exec_name = '__main__'
+```
 
 ```python
+#in assertion_tests.py
 import unittest
 import microtest.assertion as assertion
 
@@ -280,13 +287,13 @@ Yes, even the variable names must match. This ensures that there is the correct 
 
 <br>
 
-**log_start_info**<br>
+**log_start_info**()<br>
 Function called when testing is started.
 The default implementation logs the 'Started testing...' message.
 
 <br>
 
-**log_test_info(name: str, result: str, exc: Exception | None)**<br>
+**log_test_info**(name: str, result: str, exc: Exception | None)<br>
 Function called for every test executed.
 <br>
 *name* is a string which is the name of the test function.
@@ -304,7 +311,7 @@ Result.ERROR means that some other exception was raised.
 
 <br>
 
-**log_module_exec_error(module_path: str, exc_type: Class, exc: Exception, tb: Traceback)**<br>
+**log_module_exec_error**(module_path: str, exc_type: Class, exc: Exception, tb: Traceback)<br>
 Function called when an unhandled exception is raised during module execution (outside of test functions)
 <br>
 *module_path* is the absolute filepath of this module as a string.
@@ -317,13 +324,13 @@ Function called when an unhandled exception is raised during module execution (o
 
 <br>
 
-**log_module_info(module_path: str)**<br>
+**log_module_info**(module_path: str)<br>
 Function called before the module is executed.
 *module_path* is the absolute filepath of this module as a string.
 
 <br>
 
-**log_results(tests: int, failed: int, errors: int, time: float)**<br>
+**log_results**(tests: int, failed: int, errors: int, time: float)<br>
 Function to be called after all tests are executed.
 This should not be used to do any cleanup actions.
 <br>
@@ -337,7 +344,7 @@ This should not be used to do any cleanup actions.
 
 <br>
 
-**terminate()**<br>
+**terminate**()<br>
 Function guarateed to be called before the program exits.
 Do cleanup operations here.
 
@@ -350,3 +357,151 @@ Do cleanup operations here.
 >It converts the ANSI escape sequences to win32 API calls.
 
 <br>
+
+### Setting up the test suite
+
+During the configuration you can also do setup actions that have effect on entire test suite.
+It is recommended that all [resources](resources.md) and [utilites](utilites.md) are defined here.
+This way you avoid tests using resources or utilites that aren't yet created.
+
+All possible resources or utilites taht require cleaning up can be done with the **microtest.on_exit** decorator.
+This registers a function to be called right before the program is about to exit even, wheter the
+exiting is done normally or due to an exception.
+
+Here's an example of a config I've used in some of my Flask projects:
+
+```python
+import microtest
+import os
+import tempfile
+
+from application import create_app
+from application.extensions import sqlalchemy
+
+
+@microtest.utility
+class TestClient:
+    """
+    A simple wrapper on flask test client that
+    can do login, logout and registering easily.
+
+    Supports csrf_tokens.
+    """
+
+    login_url = '/auth/login'
+    logout_url = '/auth/logout'
+    register_url = '/auth/register'
+    csrf_token_name = 'csrf_token'
+
+    def __init__(self, app):
+        self.client = app.test_client()
+
+    
+    def login_as(self, username: str, password: str, *, find_csrf_token=True):
+        response = self.client.get(self.login_url)
+        form_data = {'username':username, 'password':password}
+        
+        if find_csrf_token:
+            csrf_token = self.find_csrf_token(response.data)
+            if csrf_token:
+                form_data[self.csrf_token_name] = csrf_token
+        
+        response = self.client.post(self.login_url, data=form_data)
+        return response
+
+
+    def register_as(self, username: str, email: str, password: str, *, confirm_password=True):
+        form_data = {
+            'username':username,
+            'email':email,
+            'password1':password,
+            'password2':password if confirm_password else ''
+        }
+        return self.client.post(self.register_url, data=form_data)
+
+    
+    def logout(self, *, find_csrf_token=True):
+        form_data = dict()
+        response = self.client.get(self.logout_url)
+        
+        if find_csrf_token:
+            csrf_token = self.find_csrf_token(response.data)
+            if csrf_token:
+                form_data[self.csrf_token_name] = csrf_token
+        
+        return self.client.post(self.logout_url, data=form_data)
+
+
+    def find_csrf_token(self, data: bytes) -> str:
+        token_name = self.csrf_token_name
+        input_tag_exp = re.compile(b'<input.*>')
+        matches = re.finditer(input_tag_exp, data)
+        if not matches:
+            return None
+
+        for match in matches:
+            match_str = match.group()
+            if match_str.find(f'name="{token_name}"'.encode()) != -1:
+                token_exp = re.compile(b'(?<=value=").*(?=")')
+                token = re.search(token_exp, match_str)
+                if token is not None:
+                    return token.group().decode()
+        return None
+
+
+    def __getattribute__(self, attr):
+        try:
+            return object.__getattribute__(self, attr)
+        except AttributeError:
+            client = object.__getattribute__(self, 'client')
+            return object.__getattribute__(client, attr)
+
+
+    def __enter__(self):
+        return self.client.__enter__()
+
+
+    def __exit__(self, exc_type, exc, tb):
+        self.client.__exit__(exc_type, exc, tb)
+
+
+@microtest.call
+def setup():
+    fd, path = tempfile.mkstemp()
+    config = {
+        'TESTING': True,
+        'SECRET_KEY': 'testing',
+        'SQLALCHEMY_DATABASE_URI': f'sqlite:///{path}',
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+    }
+    app = create_app(config)
+    microtest.add_resource('app', app)
+    
+    with app.app_context():
+        sqlalchemy.create_all()
+
+    @microtest.on_exit
+    def cleanup(exc_type, exc, tb):
+        os.unlink(path)
+        os.close(fd)
+
+```
+
+Here the TestClient is defined as utility, which means that it is injected into every test
+modules namespace when executed. This simply replaces imports.
+
+The setup function decorated with the **microtest.call** decorator is called only if microtest
+is doing configuration or running.
+This acts similiarly as the *if \_\_name\_\_ == '\_\_main\_\_'* guard.
+It prevents the setup function to be called if this module would be imported,
+but calls it when microtest is in the config step.
+
+Inside the setup function a temporary file is created for the sqlite database and the actual Flask
+application instance. This application instance is shared between all test modules, so it is
+added as a resource.
+
+The temporary file is removed up in the cleanup function.
+
+<br>
+
+Back to [docs](index.md)...
