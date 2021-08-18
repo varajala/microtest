@@ -130,3 +130,40 @@ but the tests can be executed by calling the **unittest.main** function.
 This might be added into microtest in future updates.
 
 <br>
+
+### Filtering executed modules
+
+Before we took a look on how to alter the test discovery.
+However using the default patterns for discovering tests and filtering them is much easier.
+
+There are two functions to filter modules:
+**microtest.exclude_modules** and **microtest.only_modules**.
+They both take an arbitrary numer of strings as named arguments.
+
+The exclude_modules function will filter those modules out which filepath contains any of the provided strings. For example calling microtest.exclude_modules('validation') with the following set of filepaths:
+
+*tests/test_login.py*
+<br>
+*tests/test_registering.py*
+<br>
+*tests/test_form_**validation**.py*
+<br>
+*tests/**validation**s/test_emails.py*
+<br>
+*tests/**validation**s/test_usernames.py*
+
+will result to only filepaths *tests/test_login.py* and *tests/test_registering.py*.
+The parts that matched the restriction are highlighted.
+
+Calling only_modules will result to execution of only those modules which filepath contains any of the given strings. This is the opposite of exclude_modules.
+
+For example calling microtest.only_modules('validation') with the same set of filepaths
+will result to filepaths *tests/test_form_**validation**.py*,
+*tests/**validation**s/test_emails.py* and *tests/**validation**s/test_usernames.py*.
+The parts that matched the restriction are highlighted. This is true even if exclude_modules was called with restrictions that might filter out some of these modules out.
+
+<br>
+
+> **NOTE**: using **only_modules** will result to ignoring any restrictions set by **exclude_modules**.
+
+<br>
