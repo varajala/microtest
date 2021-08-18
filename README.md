@@ -50,7 +50,7 @@ ERRORS: 0
 FAILED: 1
 ```
 
-See the full microtest documentation [here](docs/index.md) for complete refrence anduser guide.
+See the full microtest documentation [here](docs/index.md) for user guide and refrence of the source modules.
 
 <br>
 

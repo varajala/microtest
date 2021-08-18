@@ -87,11 +87,11 @@ def check_logger_object(obj: object):
             raise TypeError(info)
     
 
-def filter_tests(module: Module, included_groups: set, excluded_groups: set) -> Types.Iterable:
+def filter_tests(module: Module, only_groups: set, excluded_groups: set) -> Types.Iterable:
     """
     Filter tests inside a given module based on their groups.
 
-    If included_groups is not empty, only tests with those groups are returned,
+    If only_groups is not empty, only tests with those groups are returned,
     even if their group is in exclude_groups.
 
     If included_group is empty, the excluded_group is checked for filters.
@@ -100,8 +100,8 @@ def filter_tests(module: Module, included_groups: set, excluded_groups: set) -> 
     the fixture instance is returned.
     """
     tests = module.tests.copy()
-    if included_groups:
-        tests = list(filter(lambda test: test.group in included_groups, module.tests))
+    if only_groups:
+        tests = list(filter(lambda test: test.group in only_groups, module.tests))
     
     elif excluded_groups:
         tests = list(filter(lambda test: test.group not in excluded_groups, module.tests))
@@ -112,7 +112,7 @@ def filter_tests(module: Module, included_groups: set, excluded_groups: set) -> 
     return tests
 
 
-def filter_modules(modules: tuple, included_modules: set, excluded_modules: set) -> tuple:
+def filter_modules(modules: tuple, only_modules: set, excluded_modules: set) -> tuple:
     """
     Filter the executed modules based on inlcuded_modules and exclude_modules.
 
@@ -120,7 +120,7 @@ def filter_modules(modules: tuple, included_modules: set, excluded_modules: set)
     If the restriction is an absolute filepath the paths are comapred with '=='.
     Otherwise the comaprison will be 'restriction in path' (path is an absolute filepath).
 
-    If included_modules is not empty only those modules will be executed,
+    If only_modules is not empty only those modules will be executed,
     even if exclude_modules is not empty.
     
     If exclude_modules is not empty these modules will be filtered out.
@@ -130,9 +130,9 @@ def filter_modules(modules: tuple, included_modules: set, excluded_modules: set)
             return module_path == restriction
         return restriction in module_path
 
-    if included_modules:
+    if only_modules:
         filtered_modules = list()
-        for restriction in included_modules:
+        for restriction in only_modules:
             for module_path in modules:
                 if path_meets_restriction(module_path, restriction):
                     filtered_modules.append(module_path)
