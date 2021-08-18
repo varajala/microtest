@@ -167,3 +167,41 @@ The parts that matched the restriction are highlighted. This is true even if exc
 > **NOTE**: using **only_modules** will result to ignoring any restrictions set by **exclude_modules**.
 
 <br>
+
+### Filtering tests by groups
+
+Tests can be added into a group by using the **microtest.group** decorator.
+Here's an example where the function *foo* is added to the group named *bar*:
+
+```python
+import microtest
+
+
+@microtest.group('bar')
+@microtest.test
+def foo():
+    assert 1 + 1 == 2
+```
+
+<br>
+
+> **NOTE**: When using **microtest.group** decorator, remember to add the group
+> decorator **ontop** of the microtest.test decoratror.
+
+<br>
+
+To select what groups to execute, we have two functions
+**microtest.exclude_groups** and **microtest.only_groups** similiar to filtering modules.
+
+These work exactly the same way: they take an arbitrary number of strings as arguments and
+they select the filtered tests based on these.
+
+**exclude_groups** will remove tests with the groups provided from being executed.
+**only_groups** will execute only tests with the provided groups.
+
+<br>
+
+> **NOTE**: Like in module filtering using **only_groups** will result to ignoring
+> any restrictions set by **exclude_groups**.
+
+<br>
