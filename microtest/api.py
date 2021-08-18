@@ -159,7 +159,7 @@ def exclude_groups(*args):
 
 def only_groups(*args):
     for name in args:
-        core.included_groups.add(name)
+        core.only_groups.add(name)
 
 
 def exclude_modules(*args):
@@ -169,7 +169,7 @@ def exclude_modules(*args):
 
 def only_modules(*args):
     for name in args:
-        core.included_modules.add(name)
+        core.only_modules.add(name)
 
 
 def run():

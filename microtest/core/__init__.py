@@ -38,10 +38,10 @@ t_start: float = None
 t_end: float = None
 
 excluded_modules = set()
-included_modules = set()
+only_modules = set()
 
 excluded_groups = set()
-included_groups = set()
+only_groups = set()
 
 
 class TestObject:
@@ -267,14 +267,14 @@ def register_module_exec_error(module_path: str, exc_type: Types.Class, exc: Exc
 def exec_modules(module_paths: tuple, exec_name: str):
     global current_module
     with exec_context:
-        for module_path in filter_modules(module_paths, included_modules, excluded_modules):
+        for module_path in filter_modules(module_paths, only_modules, excluded_modules):
             current_module = Module(module_path)
             logger.log_module_info(module_path)
             
             try:
                 runpy.run_path(module_path, init_globals=utilities, run_name=exec_name)
 
-                for test in filter_tests(current_module, included_groups, excluded_groups):
+                for test in filter_tests(current_module, only_groups, excluded_groups):
                     call_with_resources(test)
 
             except KeyboardInterrupt:
@@ -297,7 +297,7 @@ def run_current_module():
     
     with exec_context:
         try:
-            for test in filter_tests(current_module, included_groups, excluded_groups):
+            for test in filter_tests(current_module, only_groups, excluded_groups):
                 call_with_resources(test)
         
         except KeyboardInterrupt:
