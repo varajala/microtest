@@ -205,3 +205,148 @@ they select the filtered tests based on these.
 > any restrictions set by **exclude_groups**.
 
 <br>
+
+### Creating a custom logger
+
+You can format the output to your liking by replacing the default microtest logger.
+Logger is the component reponsible of displaying the test results to the user.
+
+The default logger can be changed with any object that implements the logger interface.
+This is checked when testing is started and TypeError is raised if the provided object
+doesn't match this interface.
+
+Here's how the interface looks:
+
+```python
+class Logger:
+
+    def log_start_info(self):
+        pass
+
+    def log_test_info(self, name, result, exc):
+        pass
+
+    def log_module_exec_error(self, module_path, exc_type, exc, tb):
+        pass
+
+    def log_module_info(self, module_path):
+        pass
+    
+    def log_results(self, tests, failed, errors, time):
+        pass
+
+    def terminate(self):
+        pass
+
+
+microtest.set_logger(Logger())
+```
+
+Note that the actual implementation doesn't have to be a class that you instantiate.
+You could also do the following:
+
+```python
+#in custom_logger.py
+
+def log_start_info():
+    pass
+
+def log_test_info(name, result, exc):
+    pass
+
+def log_module_exec_error(module_path, exc_type, exc, tb):
+    pass
+
+def log_module_info(module_path):
+    pass
+
+def log_results(tests, failed, errors, time):
+    pass
+
+def terminate():
+    pass
+```
+```python
+#in tests/main.py
+
+import microtest
+import custom_logger
+
+microtest.set_logger(custom_logger)
+```
+
+The logger implementation **must** provide all the functions above with the **same exact signature**.
+Yes, even the variable names must match. This ensures that there is the correct number of named arguments. Let's walk trough the functions one by one.
+
+<br>
+
+**log_start_info**<br>
+Function called when testing is started.
+The default implementation logs the 'Started testing...' message.
+
+<br>
+
+**log_test_info(name: str, result: str, exc: Exception | None)**<br>
+Function called for every test executed.
+<br>
+*name* is a string which is the name of the test function.
+<br>
+*result* is a string representing the result.<br>
+Its value is one of the following:<br>
+  - microtest.objects.Result.OK = 'OK'
+  - microtest.objects.Result.ERROR = 'ERROR'
+  - microtest.objects.Result.FAILED = 'FAILED'
+
+Result.FAILED means that an assertion failed,
+Result.ERROR means that some other exception was raised.
+<br>
+*exc* is the Exception instance that was raised during the test or None if result == Result.OK.
+
+<br>
+
+**log_module_exec_error(module_path: str, exc_type: Class, exc: Exception, tb: Traceback)**<br>
+Function called when an unhandled exception is raised during module execution (outside of test functions)
+<br>
+*module_path* is the absolute filepath of this module as a string.
+<br>
+*exc_type* is the class of the raised exception.
+<br>
+*exc* is the Exception instance raised during module execution.
+<br>
+*tb* is a traceback object for the raised exception.
+
+<br>
+
+**log_module_info(module_path: str)**<br>
+Function called before the module is executed.
+*module_path* is the absolute filepath of this module as a string.
+
+<br>
+
+**log_results(tests: int, failed: int, errors: int, time: float)**<br>
+Function to be called after all tests are executed.
+This should not be used to do any cleanup actions.
+<br>
+*tests* is an integer of how many tests were executed.
+<br>
+*failed* is an integer of how many tests failed (AssertionError was raised).
+<br>
+*errors* is an integer of how many tests failed due to an exception (not AssertionError).
+<br>
+*time* is a float that represents the execution time in seconds.
+
+<br>
+
+**terminate()**<br>
+Function guarateed to be called before the program exits.
+Do cleanup operations here.
+
+<br>
+
+> **NOTE**: Microtest uses coloured output by default on mac and linux, since they support ANSI coloring.
+>When on Windows microtest will remind you to install
+> [colorama](https://github.com/tartley/colorama)
+>every time you run it without it being installed.
+>It converts the ANSI escape sequences to win32 API calls.
+
+<br>
