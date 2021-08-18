@@ -1,13 +1,24 @@
 ## microtest.core.utils
 
 ```python
+"""
+Utility functions for microtest.core that don't require any state.
 
+Author: Valtteri Rajalainen
+"""
 
 def capture_exception(func: Types.Function) -> Types.Function:
   pass
 
 def generate_signature(obj: object) -> list:
-  pass
+  """
+  Generate a list of argument names from the function signature.
+  
+  The provided object must be a function method or a wrapper object
+  with the actual function object available as obj.func attribute.
+  
+  TypeError is raised if these restrictions aren't met.
+  """
 
 def check_logger_object(obj: object):
   pass

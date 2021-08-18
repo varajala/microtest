@@ -1,6 +1,12 @@
 ## microtest.scanner
 
 ```python
+"""
+Test module discovery implementation.
+
+Author: Valtteri Rajalainen
+"""
+
 test_module_regex: 'tests?_\\w+\\.py|\\w+_tests?\\.py|tests?\\.py'
 
 

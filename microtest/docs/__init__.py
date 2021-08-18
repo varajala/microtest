@@ -62,6 +62,12 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
 
     if markdown:
         stream.write('```python\n')
+
+    docs = inspect.getdoc(module)
+    if docs:
+        stream.write('"""\n')
+        stream.write(docs)
+        stream.write('\n"""\n\n')
     
     def is_member(obj):
         return obj.__module__ == module.__name__
@@ -87,9 +93,12 @@ def generate_module_docs(module: object, *, markdown=True, path=None):
     classes = filter_classes(module_items)
     functions = filter_functions(module_items)
 
+    start_pos = stream.tell()
     for name, value in module_items.items():
         generate_member_docs(name, value, stream)
-    stream.write('\n\n')
+
+    if stream.tell() > start_pos:
+        stream.write('\n\n')
 
     for class_ in classes:
         generate_class_docs(class_, stream)

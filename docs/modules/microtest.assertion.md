@@ -1,6 +1,12 @@
 ## microtest.assertion
 
 ```python
+"""
+Functions for resolving runtime variable values in AssertionError tracebacks.
+
+Author: Valtteri Rajalainen
+"""
+
 OPERATORS: ['is', 'not', 'and', 'or', 'if', 'else', '==', '!=', '>', '<', '>=', '<=']
 
 

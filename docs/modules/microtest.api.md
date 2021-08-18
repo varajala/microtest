@@ -1,7 +1,11 @@
 ## microtest.api
 
 ```python
+"""
+The user API.
 
+Author: Valtteri Rajalainen
+"""
 
 class Patch:
   """

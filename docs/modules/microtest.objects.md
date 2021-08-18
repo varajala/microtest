@@ -1,7 +1,11 @@
 ## microtest.objects
 
 ```python
+"""
+Common objects used across different modules.
 
+Author: Valtteri Rajalainen
+"""
 
 class Types:
   Function: object

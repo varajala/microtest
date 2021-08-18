@@ -1,6 +1,12 @@
 ## microtest
 
 ```python
+"""
+The core API for executing microtest and performing essential setup at import.
+
+Author: Valtteri Rajalainen
+"""
+
 CONFIG_SCRIPT_ENV_VARIABLE: 'MICROTEST_ENTRYPOINT'
 DEFAULT_CONFIG_SCRIPT: 'main.py'
 exec_name: 'microtest_runner'

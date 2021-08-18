@@ -1,7 +1,15 @@
 ## microtest.logging
 
 ```python
+"""
+Default logger for microtest.
+ANSI coloring on Windows is done via colorama:
 
+https://github.com/tartley/colorama
+
+
+Author: Valtteri Rajalainen
+"""
 
 class Colors:
   GREEN: '\x1b[92m'

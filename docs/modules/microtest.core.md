@@ -1,6 +1,12 @@
 ## microtest.core
 
 ```python
+"""
+Stateful component of microtest.
+
+Author: Valtteri Rajalainen
+"""
+
 exec_context: object
 resources: dict
 utilities: dict

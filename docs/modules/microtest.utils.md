@@ -1,7 +1,11 @@
 ## microtest.utils
 
 ```python
+"""
+Utility classes and functions for testing.
 
+Author: Valtteri Rajalainen
+"""
 
 class Namespace:
   def __getattribute__(self, attr):

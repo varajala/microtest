@@ -1,6 +1,13 @@
 ## microtest.docs
 
 ```python
+"""
+Find all Python modules inside a package structure and generate
+simple docs from these modules.
+
+Author: Valtteri Rajalainen
+"""
+
 INDENT: '  '
 
 
