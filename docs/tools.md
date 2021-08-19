@@ -8,6 +8,7 @@ Microtest provides some useful testing tools for making common testing tasks eas
 
   - [Namespaces](#namespace)
   - [Patching](#patch)
+  - [Expecting Erros](#expecting-errors)
   - [Temporary Directory](#temporary-directory)
   - [Restricting File Access](#restricting-file-access)
   - [WSGI server](#wsgi-server)
@@ -131,6 +132,10 @@ where the actual init_db function is defined.
 
 <br>
 
+### Expecting Errors
+
+<br>
+
 ### Temporary Directory
 
 Microtest provides a slightly extended version of tempfile.TemporaryDirectory.
@@ -179,6 +184,69 @@ are located in the microtest.utils module.
 <br>
 
 ### Restricting File Access
+
+Microtest provides a useful context manager for temporarily reducing file or directory
+permissions. This context manager is returned by the **set_as_unauthorized** function:
+
+```python
+def set_as_unauthorized(path: str) -> ContextManager:
+```
+
+For files the the change in permissions is equal to:
+    
+    chmod u-rw directory
+    chmod u-rwx directory/file
+
+For directories the change in permissions is equal to:
+    
+    chmod u-rwx directory
+
+The original permissions are restored after the context has exited.
+
+<br>
+
+> **NOTE**: The change in permissions is implemented by using os.chmod.
+> This is not fully supported on Windows.
+> See [https://docs.python.org/3/library/os.html#os.chmod](https://docs.python.org/3/library/os.html#os.chmod) for more info.
+
+<br>
+
+Here's an example:
+
+```python
+import tempfile
+import os
+import microtest
+from microtest.utils import set_as_unauthorized
+
+
+@microtest.setup
+def setup():
+    path, fd = tempfile.mkstemp()
+    microtest.add_resource('path', path)
+    microtest.add_resource('fd', fd)
+
+
+@microtest.cleanup
+def cleanup(path, fd):
+    os.unlink(path)
+    os.close(fd)
+
+
+def read_file(filepath: str) -> str:
+    with open(filepath) as file:
+        return file.read()
+
+
+@microtest.test
+def test_unauthorized_files(path):
+    with set_as_unauthorized(path):
+        assert microtest.raises(read_file, (path,), PermissionError)
+
+```
+<br>
+
+The **set_as_unauthorized** function is located in the microtest.utils module.
 
 <br>
 
