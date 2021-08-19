@@ -6,16 +6,16 @@ Back to [docs](index.md)...
 
 Microtest provides some useful testing tools for making common testing tasks easier.
 
-  - [Namespace](#namespace)
-  - [patch](#patch)
-  - [create_temp_dir](#create_temp_dir)
-  - [set_as_unauthorized](#set_as_unauthorized)
-  - [start_wsgi_server](#start_wsgi_server)
-  - [start_smtp_server](#start_smtp_server)
+  - [Namespaces](#namespace)
+  - [Patching](#patch)
+  - [Temporary Directory](#temporary-directory)
+  - [Restricting File Access](#restricting-file-access)
+  - [WSGI server](#wsgi-server)
+  - [SMTP server](#smtp-server)
 
 <br>
 
-### Namespace
+### Namespaces
 
 Namespaces are a thin wrapper around Python's builtin dictionaries.
 They provide dictionary access with **\_\_getattr\_\_** and **\_\_setattr\_\_**.
@@ -59,7 +59,7 @@ Failed 'key' lookup on the Namespace will raise an AttributeError.
 
 <br>
 
-### Patch
+### Patching
 
 Patching means dynamically modifying some object's state for testing purposes.
 Microtest provides a **patch** function to do this.
@@ -129,3 +129,63 @@ where the actual init_db function is defined.
 > **NOTE**: Patching won't work if you import specific items from a module rather than the whole module.
 > See https://docs.python.org/3/library/unittest.mock.html#where-to-patch for more info.
 
+<br>
+
+### Temporary Directory
+
+Microtest provides a slightly extended version of tempfile.TemporaryDirectory.
+It allows to populate the directory easily and remove all of its contents
+without removing the actual directory.
+
+See [https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory) for more info on the tempfile.TemporaryDirectory and its usage.
+
+The microtest TemporaryDirectory offers the same methods and properties as
+the tempfile.TemporaryDirectory but adds the following methods and properties:
+
+
+```python
+class TemporaryDirectory:
+    """
+    A subclass of tempfile.TemporaryDirectory.
+    Adds easy population with files and directories
+    and clearing all contents without removing the
+    directory.
+    """
+  
+  @property
+  def path(self):
+    """Return the absolute path of this directory as a string."""
+
+  def populate(self, files=list(), dirs=list()):
+    """
+    For every name in files and dirs, create new file/directory
+    inside this temporary directory.
+    """
+
+  def delete_contents(self):
+    """Delete all files and directories inside this temporary directory."""
+```
+
+There is also a function called **create_temp_dir** that creates a new TemporaryDirectory instance
+and populates it with the provided items.
+
+```python
+def create_temp_dir(files = list(), dirs = list()) -> TemporaryDirectory:
+```
+
+The **TemporaryDirectory** class and the **create_temp_dir** function
+are located in the microtest.utils module.
+
+<br>
+
+### Restricting File Access
+
+<br>
+
+### WSGI Server
+
+<br>
+
+### SMTP Server
+
+<br>
