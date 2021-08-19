@@ -184,8 +184,62 @@ are located in the microtest.utils module.
 
 ### WSGI Server
 
+Microtest provides a simple function to start a WSGI server for testing using Python's builtin
+wsgiref.simple_server module.
+
+```python
+def start_wsgi_server(wsgi_app: object, *, port: int, host: str = 'localhost', wait = True) -> Process:
+```
+
+The **start_wsgi_server** function runs a web server in the address host:port.
+The provided wsgi_app must be a valid WSGI application specified by PEP 3333.
+If wait is True this call blocks until a connection can be established with the created server.
+The server is executed in another process. The returned Process instance has the following methods and properties:
+
+```python
+class Process:
+    """
+    A wrapper object that holds refrences to a process object and
+    a text stream where the process's output is directed.
+    
+    The wrapper process object can be an instance of subprocess.Popen 
+    or multiprocessing.Process.
+    """
+
+  @property
+  def running(self) -> bool:
+    pass
+
+  def read_output(self, *, read_all=False):
+    """
+    Read the output that the wrapped process has produced since
+    last read. If read_all is set to True, all output that the
+    process has ever produced will be read.
+    """
+
+  def kill(self):
+    """Kill the running process and close the output stream."""
+
+  def terminate(self):
+    """Terminate the running process and close the output stream."""
+```
+The **start_wsgi_server** function is located in the microtest.utils module.
+
 <br>
 
 ### SMTP Server
+
+Microtest provides a simple function to start a SMTP server for testing using Python's builtin smtpd module.
+
+```python
+def start_smtp_server(*, port: int, host: str = 'localhost', wait = True) -> Process:
+```
+
+The **start_smtp_server** function runs a smtp server in the address host:port.
+If wait is True this call blocks until a connection can be established with the created server.
+The server is executed in another process.
+The returned Process instance is similiar to one returned by **start_wsgi_server**.
+
+The **start_smtp_server** function is located in the microtest.utils module.
 
 <br>
