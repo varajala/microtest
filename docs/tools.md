@@ -134,6 +134,73 @@ where the actual init_db function is defined.
 
 ### Expecting Errors
 
+In many cases you may want to test if certain functions with specific arguments
+raise some exception or not. Microtest helps you doing so with the **raises** function.
+
+```python
+def raises(callable: Callable, params: Union[tuple, dict], exc_type: Class) -> bool:
+```
+
+The **raises** function takes a callable object and calls it with the provided
+arguments. If the callable raises an exception of type exc_type it returns True.
+If any other exception is raised, it is raised normally and if no exceptions are raised, it returns
+False.
+
+The params must be a tuple or a dictionary object. If params is a tuple, its contents are passed to the callable as named arguments.
+If params is a dict, its contents are passed to the callable as keyword arguments.
+
+Here's an example:
+
+```python
+import microtest
+
+
+class TypedDict:
+    def __init__(self, *, keys, values):
+        self.t_keys = keys
+        self.t_values = values
+        self.items = dict()
+
+    def __getitem__(self, key):
+        return self.items[key]
+
+    def __setitem__(self, key, value):
+        if not isinstance(key, self.t_keys):
+            raise TypeError(f'Key is not type of "{self.t_keys}"')
+        if not isinstance(value, self.t_values):
+            raise TypeError(f'Value is not type of "{self.t_values}"')
+        self.items[key] = value
+
+    def __contains__(self, item):
+        return item in self.items
+
+
+@microtest.test
+def test_adding_values():
+    td = TypedDict(keys=str, values=int)
+    td['foo'] = 1
+    td['bar'] = 2
+    assert td['foo'] == 1
+    assert td['bar'] == 2
+
+
+@microtest.test
+def test_adding_invalid_key_type():
+    td = TypedDict(keys=str, values=int)
+    assert microtest.raises(td.__setitem__, (1, 1), TypeError)
+
+
+@microtest.test
+def test_adding_invalid_value_type():
+    td = TypedDict(keys=str, values=int)
+    assert microtest.raises(td.__setitem__, ('foo', 'bar'), TypeError)
+
+
+if __name__ == '__main__':
+    microtest.run()
+
+```
+
 <br>
 
 ### Temporary Directory
