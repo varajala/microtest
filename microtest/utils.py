@@ -19,13 +19,30 @@ from microtest.objects import Types
 
 
 class Namespace:
+    """
+    A thin wrapper around Python dictionaries.
+    Provides access to the dict with __getattr__ and __setatttr__.
+
+    ns = Namespace({'foo': 'bar'})
+    print(ns.foo)
+    >>> 'bar'
+
+    ns.foo = 'not bar...'
+    print(ns.foo)
+    >>> 'not bar...'
+
+    ns.spam = 1
+    print(ns.spam)
+    >>> 1
+    """
+    
     def __init__(self, items=dict()):
         object.__setattr__(self, 'items', items)
 
     def __getattribute__(self, attr):
-        items = object.__getattribute__(self, 'items')
         if attr not in self:
             raise AttributeError(f'No memeber "{attr}" in namespace')
+        items = object.__getattribute__(self, 'items')
         return items[attr]
 
     def __setattr__(self, attr, value):
@@ -37,6 +54,12 @@ class Namespace:
 
 
 class TemporaryDirectory(tempfile.TemporaryDirectory):
+    """
+    A subclass of tempfile.TemporaryDirectory.
+    Adds easy population with files and directories
+    and clearing all contents without removing the
+    directory.
+    """
     @property
     def path(self):
         return os.path.abspath(self.name)
@@ -120,6 +143,13 @@ class UnauthorizedDirectory:
 
 
 class Process:
+    """
+    A wrapper object that holds refrences to a process object and
+    a text stream where the process's output is directed.
+
+    The wrapper process object can be an instance of subprocess.Popen 
+    or multiprocessing.Process.
+    """
     def __init__(self, stream, process):
         self.last_read = 0
         self.stream = stream
@@ -136,6 +166,11 @@ class Process:
             return proc.poll() is None
 
     def read_output(self, *, read_all=False):
+        """
+        Read the output that the wrapped process has produced since
+        last read. If read_all is set to True, all output that the
+        process has ever produced will be read.
+        """
         i = self.last_read if not read_all else 0
         self.last_read = self.stream.tell()
         self.stream.seek(i)
@@ -151,12 +186,27 @@ class Process:
 
 
 def create_temp_dir(*, files=list(), dirs=list()) -> TemporaryDirectory:
+    """
+    Create a TemporaryDirectory instance and populate it with
+    the provided files and directories.
+    """
     dir_ = TemporaryDirectory()
     dir_.populate(files, dirs)
     return dir_
 
 
 def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDirectory]:
+    """
+    Return a context manager for temporarily restricting access to the path.
+    Rights are restored after the context has exited.
+
+    For files the restriction is basically the same as:
+    $ chmod u-rw directory
+    $ chmod u-rwx file
+
+    For directories the restriction is basically the same as:
+    $ chmod u-rwx directory
+    """
     if os.path.isfile(path):
         return UnauthorizedFile(path)
     return UnauthorizedDirectory(path)
@@ -178,6 +228,12 @@ def _wait_for_server_init(host: tuple):
 
 
 def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Process:
+    """
+    Start a debug SMTP server on host:port.
+    If wait is True, this call blocks until a connection can be established with the server.
+
+    Uses the builtin smtd.DebuggingServer.
+    """
     if not sys.executable:
         raise RuntimeError('Can\'t find the Python executable (sys.exectuable is None or "")')
     
@@ -193,6 +249,13 @@ def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Pro
 
 
 def start_wsgi_server(wsgi_app: object, *, port: int, host = 'localhost', wait = True) -> Process:
+    """
+    Start a debug web server that serves the WSGI application wsgi_app.
+    The provided wsgi_app object must be a valid WSGI application specified by PEP 3333.
+    If wait is True, this call blocks until a connection can be established with the server.
+
+    Uses the builtin wsgiref.simple_server.
+    """
     def run_server(host, port, wsgi_app, stream):
         sys.stdout = sys.stderr = stream
         with wsgiref.simple_server.make_server(host, port, wsgi_app) as server:
