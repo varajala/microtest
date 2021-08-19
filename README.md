@@ -5,9 +5,7 @@ Simple but powerful testing utilities for Python.
 
 ## Installation
 
-To install microtest download and unpack the zip folder with the source code, or fork and clone this project to a local repository. After this navigate to the toplevel directory where the **setup.py** - file is located and install the package with pip.
-
-    python -m pip install .
+    python -m pip install microtest-framework
 
 <br>
 
