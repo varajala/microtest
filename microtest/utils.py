@@ -248,7 +248,7 @@ def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Pro
     return Process(stream, proc)
 
 
-def start_wsgi_server(wsgi_app: object, *, port: int, host = 'localhost', wait = True) -> Process:
+def start_wsgi_server(wsgi_app: object, *, port: int, host: str = 'localhost', wait = True) -> Process:
     """
     Start a debug web server that serves the WSGI application wsgi_app.
     The provided wsgi_app object must be a valid WSGI application specified by PEP 3333.

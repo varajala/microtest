@@ -8,6 +8,22 @@ Author: Valtteri Rajalainen
 """
 
 class Namespace:
+  """
+  A thin wrapper around Python dictionaries.
+  Provides access to the dict with __getattr__ and __setatttr__.
+  
+  ns = Namespace({'foo': 'bar'})
+  print(ns.foo)
+  >>> 'bar'
+  
+  ns.foo = 'not bar...'
+  print(ns.foo)
+  >>> 'not bar...'
+  
+  ns.spam = 1
+  print(ns.spam)
+  >>> 1
+  """
   def __getattribute__(self, attr):
     """
     Return getattr(self, name).
@@ -23,15 +39,10 @@ class Namespace:
 
 class TemporaryDirectory:
   """
-  Create and return a temporary directory.  This has the same
-  behavior as mkdtemp but can be used as a context manager.  For
-  example:
-  
-      with TemporaryDirectory() as tmpdir:
-          ...
-  
-  Upon exiting the context, the directory and everything contained
-  in it are removed.
+  A subclass of tempfile.TemporaryDirectory.
+  Adds easy population with files and directories
+  and clearing all contents without removing the
+  directory.
   """
   path: object
 
@@ -79,10 +90,21 @@ class UnauthorizedDirectory:
     pass
 
 class Process:
+  """
+  A wrapper object that holds refrences to a process object and
+  a text stream where the process's output is directed.
+  
+  The wrapper process object can be an instance of subprocess.Popen 
+  or multiprocessing.Process.
+  """
   running: object
 
   def read_output(self, *, read_all=False):
-    pass
+    """
+    Read the output that the wrapped process has produced since
+    last read. If read_all is set to True, all output that the
+    process has ever produced will be read.
+    """
 
   def kill(self):
     pass
@@ -91,16 +113,40 @@ class Process:
     pass
 
 def create_temp_dir(*, files=list(), dirs=list()) -> TemporaryDirectory:
-  pass
+  """
+  Create a TemporaryDirectory instance and populate it with
+  the provided files and directories.
+  """
 
 def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, UnauthorizedDirectory]:
-  pass
+  """
+  Return a context manager for temporarily restricting access to the path.
+  Rights are restored after the context has exited.
+  
+  For files the restriction is basically the same as:
+  $ chmod u-rw directory
+  $ chmod u-rwx file
+  
+  For directories the restriction is basically the same as:
+  $ chmod u-rwx directory
+  """
 
 def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Process:
-  pass
+  """
+  Start a debug SMTP server on host:port.
+  If wait is True, this call blocks until a connection can be established with the server.
+  
+  Uses the builtin smtd.DebuggingServer.
+  """
 
-def start_wsgi_server(wsgi_app: object, *, port: int, host = 'localhost', wait = True) -> Process:
-  pass
+def start_wsgi_server(wsgi_app: object, *, port: int, host: str = 'localhost', wait = True) -> Process:
+  """
+  Start a debug web server that serves the WSGI application wsgi_app.
+  The provided wsgi_app object must be a valid WSGI application specified by PEP 3333.
+  If wait is True, this call blocks until a connection can be established with the server.
+  
+  Uses the builtin wsgiref.simple_server.
+  """
 
 ```
 
