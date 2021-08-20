@@ -51,6 +51,7 @@ class DefaultLogger:
         self.mode = output_mode
         self.out = out
         self.width = self.DEFAULT_WIDTH
+        self.use_colors = False
         
         if out.isatty():
             self.use_colors = True

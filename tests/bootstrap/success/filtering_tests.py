@@ -41,3 +41,21 @@ def test_only_modules():
     assert 'config executed' in output
     assert 'run_this_test' in output
     assert 'exec_this_test' in output
+
+
+@microtest.test
+def test_exclude_groups():
+    os.environ['MICROTEST_ENTRYPOINT'] = 'exclude_slow.py'
+    output = run_microtest(join_asset_path('test_filtering'))
+    assert 'config executed' in output
+    assert 'slow_test' not in output
+    assert 'normal_test' in output
+
+
+@microtest.test
+def test_only_groups():
+    os.environ['MICROTEST_ENTRYPOINT'] = 'only_slow.py'
+    output = run_microtest(join_asset_path('test_filtering'))
+    assert 'config executed' in output
+    assert 'slow_test' in output
+    assert 'normal_test' not in output

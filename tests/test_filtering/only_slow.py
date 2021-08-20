@@ -23,6 +23,6 @@ class Logger:
 
 
 microtest.set_logger(Logger())
-microtest.exclude_modules('dont_run', 'dont_exec')
+microtest.only_groups('slow', 'super_slow')
 
 print('config executed')

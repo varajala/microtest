@@ -1,5 +1,4 @@
 import microtest
-import sys
 
 
 class Logger:
