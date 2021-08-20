@@ -70,7 +70,7 @@ class TemporaryDirectory(tempfile.TemporaryDirectory):
             open(path, 'x').close()
 
         for dir_ in dirs:
-            path = os.path.join(self.path, file)
+            path = os.path.join(self.path, dir_)
             os.mkdir(path)
 
     def delete_contents(self):
