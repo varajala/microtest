@@ -48,13 +48,16 @@ class Tests(unittest.TestCase):
         directories.insert(0, '')
         for dir_ in directories:
             dir_path = os.path.join(temp_dir.path, dir_)
+            self.assertTrue(os.path.exists(dir_path))
             
             for name in test_files:
                 path = os.path.join(dir_path, name)
+                self.assertTrue(os.path.exists(path))
                 self.assertTrue(path in modules)
 
             for name in other_files:
                 path = os.path.join(dir_path, name)
+                self.assertTrue(os.path.exists(path))
                 self.assertTrue(path not in modules)
 
 

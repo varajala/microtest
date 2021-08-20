@@ -138,13 +138,16 @@ def filter_modules(modules: tuple, only_modules: set, excluded_modules: set) -> 
                     filtered_modules.append(module_path)
         return tuple(filtered_modules)
     
-    filtered_modules = list(modules)
+    if not excluded_modules:
+        return modules
     
-    for restriction in excluded_modules:
-        removed = 0
-        for index, module_path in enumerate(modules):
+    filtered_modules = list(modules)
+    removed = 0
+    for index, module_path in enumerate(modules):
+        for restriction in excluded_modules:
             if path_meets_restriction(module_path, restriction):
                 filtered_modules.pop(index - removed)
                 removed += 1
+                break
     
     return tuple(filtered_modules)
