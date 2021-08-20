@@ -7,6 +7,7 @@ Functions for resolving runtime variable values in AssertionError tracebacks.
 Author: Valtteri Rajalainen
 """
 
+COMMA: ','
 OPERATORS: ['is', 'not', 'and', 'or', 'if', 'else', '==', '!=', '>', '<', '>=', '<=']
 
 
@@ -14,17 +15,6 @@ def extract_data_from_bottom_tb(traceback: Types.Traceback):
   """
   Find the 'root' stack frame of the traceback and return its
   globals, locals and the original linenumber where exception was raised. 
-  """
-
-def separate_assertion_context(assertion_line: str, exc_message: str) -> Types.Tuple[str, Types.Union[str, None]]:
-  """
-  For the given assertion line and exception message, exctract
-  the assertion 'context'. Returns the raw assertion expression and the context in a tuple.
-  
-  Example:
-  
-      "assert x == 10, ("X is not 10!", x)" -> ('assert x == 10', '("X is not 10", x)')
-      "assert x == 10" -> ('assert x == 10', None)
   """
 
 def escape_strings(assertion: str) -> Types.Tuple[str, Types.Function]:
@@ -58,6 +48,13 @@ def separate_operators_and_expressions(assertion: str) -> Types.Tuple[Types.List
       'assert x == 10 and y < 2' -> (['==', '<'], ['x', '10', 'y', '2'])
       
       'assert x is not None' -> (['is', 'not'], ['x', '', 'None'])
+  """
+
+def generate_generic_error_message(exception: Exception, lineno: int) -> str:
+  """
+  Generate a generic error message in the following format:
+  
+  { exception.__class__.__name } in line { lineno }: { str(exception) }
   """
 
 def resolve_assertion_error(exc_type: Types.Class, exception: Exception, tb: Types.Traceback) -> str:

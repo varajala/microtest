@@ -76,6 +76,16 @@ class Tests(unittest.TestCase):
             self.assertTrue("('1 was not equal to 2', 'some other string')" in result)
 
 
+    def test_assertion_context_with_variables(self):
+        x = '10'
+        try:
+            assert x == 10, ('This is the exception context', x)
+        except AssertionError as err:
+            result = assertion.resolve_assertion_error(type(err), err, err.__traceback__)
+            self.assertTrue("'10' == 10" in result)
+            self.assertTrue("('This is the exception context', '10')" in result)
+
+
     def test_list_comp_assertion(self):
         try:
             assert [1, 2, 3] == [i for i in range(4)]
