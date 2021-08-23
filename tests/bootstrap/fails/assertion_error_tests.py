@@ -44,6 +44,7 @@ def test_assertion_with_context_tuple():
     x = '10'
     assert x == 10, ('This is the exception context', x)
 
+
 @microtest.test
 def test_assertion_error_with_list_comp_context():
     list_ = [i * i for i in range(1, 6)]
