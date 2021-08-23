@@ -19,8 +19,9 @@ Microtest provides some useful testing tools for making common testing tasks eas
 ### Namespaces
 
 Namespaces are a thin wrapper around Python's builtin dictionaries.
-They provide dictionary access with **\_\_getattr\_\_** and **\_\_setattr\_\_**.
-It is located in the microtest.utils module.
+They provide access to the given dictionary with **\_\_getattr\_\_** and **\_\_setattr\_\_**.
+
+It is located in the **microtest.utils** module.
 
 Here's an example:
 
@@ -52,8 +53,8 @@ print(data)
 # >>> {'name': 'Dave', 'age': 33, 'hobby': 'fishing'}
 ```
 
-As you can see the Namespace can wrap an exitinsing dictionary and mutate its values.
-You can create an empty Namepace by not providing a dictionary in the 'constructor',
+As you can see the Namespace can wrap an existing dictionary and mutate its values.
+You can create an empty Namespace by not providing a dictionary in the 'constructor',
 this creates a new dictionary for the namespace.
 
 Failed 'key' lookup on the Namespace will raise an AttributeError.
@@ -328,7 +329,7 @@ def start_wsgi_server(wsgi_app: object, *, port: int, host: str = 'localhost', w
 
 The **start_wsgi_server** function runs a web server in the address host:port.
 The provided wsgi_app must be a valid WSGI application specified by PEP 3333.
-If wait is True this call blocks until a connection can be established with the created server.
+If wait is True this call blocks until a connection can be established with the server.
 The server is executed in another process. The returned Process instance has the following methods and properties:
 
 ```python
@@ -371,7 +372,7 @@ def start_smtp_server(*, port: int, host: str = 'localhost', wait = True) -> Pro
 ```
 
 The **start_smtp_server** function runs a smtp server in the address host:port.
-If wait is True this call blocks until a connection can be established with the created server.
+If wait is True this call blocks until a connection can be established with the server.
 The server is executed in another process.
 The returned Process instance is similiar to one returned by **start_wsgi_server**.
 

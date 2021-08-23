@@ -18,7 +18,7 @@ project
 
 Here the actual code is inside the project/project directory and the tests are in separate project/tests directory. This means that the tests are not part of the main Python package.
 
-For smaller projects tests usually fit inside a single directory, but when the project grows larger
+In smaller projects tests usually fit inside a single directory, but when the project grows larger
 usually the tests are split into more than one directory. This means that if you want to share code
 between test modules, you have to install the tests as a separate Python package (or hack sys.path...) for importing to work.
 
@@ -67,15 +67,30 @@ def global_setup():
         os.close(fd)
 ```
 
-This would be an example of a global config script where **global_setup** function defines a resource: a sqlite database connection object. Because we don't want any of our tests to have side effects on our other tests, we want the database to be cleared after every test that makes modifications to the database. Our **reset_dataabse** function does exactly that. Because we used the **microtest.utility** decorator to inject this function into every test module's global namespace.
+This would be an example of a global config script where **global_setup** function defines a resource: a sqlite database connection object. Because we don't want any of our tests to have side effects on our other tests, we want the database to be cleared after every test that makes modifications to the database. Our **reset_database** function does exactly that.
+Because we used the **microtest.utility** decorator, this function will be injected into every
+test module's global namespace.
 
-We could have added the **reset_database** function as a utility also by removing the **microtest.utility** decorator and by adding the following line into the **global_setup** function:
+We could have added the **reset_database** function as a utility also by removing the
+**microtest.utility** decorator and by adding the following line into the **global_setup** function:
 
 ```python
 microtest.utility(reset_database, name='foo')
 ```
 
 Now the **reset_database** function object would be accessible under the identifier 'foo'.
+
+<br>
+
+### Considerations
+
+Like in everything there are pros and cons when using utilites.
+The pros are that you don't have to create a separate package for your tests.
+The cons are that this introduces unnamed dependency in the module using the utility.
+Also when relying on microtest to provide this import replacement, you cannot
+execute the module without microtest.
+
+Utilites are useful for small projects. However I suggest that you use them sparingly.
 
 <br>
 

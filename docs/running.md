@@ -4,7 +4,7 @@ Back to [docs](index.md)...
 
 ## Running
 
-Microtest can be used to run tests automatically in two different ways. The first way is to use the **microtest.run** function and run the python module normally as a script.
+Microtest can be used to run tests automatically in two different ways. The first way is to use the **microtest.run** function and run the module normally as a script.
 
 Let's revisit the example from the [basics](basics.md) section:
 
@@ -70,10 +70,9 @@ ERRORS: 0
 FAILED: 1
 ```
 
-As you can see there is not much of a difference when running only a single module.
-However when running microtest whis way there are many things happening differently internally.
-
-When microtest is executed as a module, the first thing that happens is that microtest will check if the provided path is a file or not. When the path points to a file, microtest will simply just execute that single module. This is not that different from executing the test module as a script.
+As you can see there is not much of a difference when running only a single file.
+This is becaus if the path points to a file, microtest will simply just execute that single module. This is not that different from executing the test module as a script.
+However when running microtest whis way there are many internal things happening differently.
 
 <br>
 
@@ -81,7 +80,7 @@ When microtest is executed as a module, the first thing that happens is that mic
 
 <br>
 
-But when the path points to a directory rather than a single file, microtest test will perform the following steps:
+When the path points to a directory rather than a single file, microtest test will perform the following steps:
 
   - look for a configuration script
   - execute the configuration script if one was found
@@ -96,9 +95,9 @@ First microtest will search for a config script. By default microtest will check
 
 This can be changed with an environment variable called **MICROTEST_ENTRYPOINT**. The entrypoint can be set to a relative or an absolute path.
 
-If a config script is found it will be executed normally before any tests. This step is completely separate from the acrtual testing and any exceptions raised during the configuration will stop the program executing any further. 
+If a config script is found it will be executed normally before any tests. This step is completely separate from the acrtual testing and any exceptions raised during the configuration will stop the program executing any further. You should not include any tests inside the config script.
 
-More on the different availabe config options in the [config](config.md) section.
+See the [config](config.md) section for detailed documentation on the configuration step.
 
 <br>
 
@@ -115,23 +114,24 @@ which's name either
   - is equal to **test** or **tests**
 
 
-This can be changed during the config phase by changing the regex that is responsible for matching test modules. Here is the default regex for finding test modules: 
-
-```python
- "tests?_\\w+\\.py|\\w+_tests?\\.py|tests?\\.py"
-```
-
+This can be changed during the config phase.
 It is also possible to filter modules by the path and test functions by adding them in a group. Again, more on this in the [config](config.md) section.
 
 <br>
 
-> **NOTE**: Modules are discovered using breadth-first-search. This means that modules higher in
+Modules are discovered using breadth-first-search. This means that modules higher in
 the directory hierachy are excecuted before modules that are lower in the directory hierarchy.
 **This can be relied on.**
 
-> **NOTE**: Modules inside the same directory are executed in the order dependent on the underlying filesystem, they are not sorted in any way. **You should not rely on any particular order of execution of modules inside the same directory**.
+Modules inside the same directory are executed in the order dependent on the underlying filesystem, they are not sorted in any way. **You should not rely on any particular order of execution of modules inside the same directory**.
+
+If some of your test modules rely on resources or utilites to be available when executed,
+place them into some subdirectory. This will guarantee that the module higher in the directory
+hierarchy that defines the needed entities is executed first.
 
 <br>
+
+### Running all tests inside a directory
 
 Let's take a look on how the output looks when executing tests inside a directory structure. As an example here's a test directory of a Flask application I have built:
 
@@ -249,8 +249,7 @@ OK.
 
 ```
 
-As you can see microtest found all python modules matching the default test module regex and executed all tests inside them.
-
+As you can see microtest found all python modules matching the default regex and executed all tests inside them. The default output displays all executed modules and the single tests inside them.
 
 <br>
 

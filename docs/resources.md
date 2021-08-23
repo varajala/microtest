@@ -5,8 +5,8 @@ Back to [docs](index.md)...
 ## Resources
 
 Many tests require some external entities that should be reused for efficient and fast testing.
-Some examples of this are database connections, WSGI application instances, or functions that generate
-fake test data. Microtest provides **resources** to do this.
+Some examples of this are database connections, WSGI application instances, or functions that generate fake test data.
+Microtest provides **resources** to do this.
 
 Resource is basically just an object that can be easily shared across tested modules. Test functions
 can 'request' these objects by providing the resource name as named argument in the function declaration. A resource can be a single object, or a function that produces a new object every time the resource is requested.
@@ -71,8 +71,11 @@ they easily provide setup, reset and cleanup actions [here](fixtures.md).
 
 <br>
 
+> **NOTE**: All arguments for a test function will be interpreted as a resource name.
+> Test functions should not take arguments that are not resources.
+
 > **NOTE**: Resources are not exclusive to test functions only.
-Also other resources, setup, reset and cleanup functions can request resources.
+> Also other resources, setup, reset and cleanup functions can request resources.
 
 > **NOTE**: Resources are always scoped to the whole test suite: test modules can request resources from other modules. Note that the test fails if it requests a resource from a module that has not yet been executed.
 

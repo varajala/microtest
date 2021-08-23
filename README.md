@@ -7,6 +7,11 @@ Simple but powerful testing framework for Python.
 
     python -m pip install microtest-framework
 
+On Mac and Linux microtest doesn't require any external dependencies.
+On Windows [colorama](https://github.com/tartley/colorama) is used to translate ANSI escape sequences to win32 calls.
+
+Microtest currently requires Python version 3.7 or higher.
+
 <br>
 
 ## Usage
@@ -62,13 +67,13 @@ To contribute new features to this project do the following steps:
 
   - Open a new issue explaining the new feature
   - Wait for approval
-  - Fork and clone the repository t your local machine and code up the feature in a **new branch**
+  - Fork and clone the repository to your local machine and code up the feature in a **new branch**
   - Pull request
 
 The *wait for approval* step is there so that you don't end up coding up some feature that might
-not be included into microtest. This could happen if the proposed feauture is redundant, changes the
+not be included into microtest. This could happen if the proposed feature is redundant, changes the
 existing api too radically, or simply just is not the *right thing* to be added into microtest.
 
 The goal is to keep this project simple and small.
 
-**Bug fixes, documentation improvements and other minnor tweaks are always welcome, no need for approval here.**
+**Bug fixes, documentation improvements and other minor tweaks are always welcome, no need for approval.** Just leave a pull request with the fixes done in a separate branch.

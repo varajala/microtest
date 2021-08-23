@@ -10,18 +10,24 @@ As mentioned in the [running](running.md) section, when executing microtest as a
   - microtest will try to find a config script
   - run the config script if found
 
-The config script is simply a Python module containing arbitrary Pyhton code.
+The config script is simply a Python module containing arbitrary Python code.
 It is executed before any tests are discovered or executed so you can perform the following actions:
 
   - Alter how test modules are discovered
   - Alter the **\_\_name\_\_** - attribute of the executed modules
   - Filter test modules by their filepath
   - Filter tests by groups
-  - Change the way output is logged by replacing the default logger
+  - Change the way output is displayed by replacing the default logger
   - Define [utilites](utilities.md) to be shared across all test modules
   - Add [resources](resources.md) to be shared across all test modules
   - Register cleanup actions to be preformed before exiting the program
   - Execute arbitrary Python code before testing (ask user input for options, etc...)
+
+<br>
+
+> **NOTE**:You should not include any tests inside the config script.
+
+<br>
 
 The config script is by default a file called **main.py**
 inside the directory provided as command line argument.
@@ -29,12 +35,15 @@ This can be modified by setting an environment variable called
 **MICROTEST_ENTRYPOINT** to point to a file you want to be executed.
 If this path is not absolute, it will be joined with the path provided.
 
+
+If microtest doesn't recieve any command line arguments, the current working directory is used.
+
 <br>
 
 ### Altering module discovery
 
 After the config step is done microtest will search for test modules inside the given directory structure.
-The collected test modules are determined by matching the module name against a single regular expression.
+Which modules are collected is determined by matching the module name against a single regular expression.
 Here's the default value of this regex:
 
 ```python
@@ -49,8 +58,8 @@ It will match modules which name:
 
 This regex can be set directly by using the **microtest.set_module_discovery_regex** function.
 It takes a single string as an argument. This string is expected to be a valid regex and if
-its compilation fails using re.compile(), a ValueError will be raised.
-Comparison is done by using re.fullmatch().
+its compilation fails using re.compile, a ValueError will be raised.
+Comparison is done by using re.fullmatch.
 Note that the this is done against the modules's name, not the full filepath.
 
 <br>
@@ -69,10 +78,11 @@ Note that the this is done against the modules's name, not the full filepath.
 
 The \_\_name\_\_ - attribute of the executed modules can be simply altered by setting the **microtest.exec_name**
 to the string you want it to be. This defaults to **'microtest_runner'**.
-When executing the cinfig script it will always be the default value.
+When executing the config script it will always be the default value.
 
 It can be useful to set this to something else, for example when running tests built with unittest.
-Here's an excerpt from the microtest's own tests:
+
+Here's an example:
 ```python
 #in main.py
 import microtest
@@ -147,7 +157,7 @@ There are two functions to filter modules:
 **microtest.exclude_modules** and **microtest.only_modules**.
 They both take an arbitrary numer of strings as named arguments.
 
-The exclude_modules function will filter those modules out which filepath contains any of the provided strings. For example calling microtest.exclude_modules('validation') with the following set of filepaths:
+The exclude_modules function will filter those modules out which filepath contains any of the provided strings. For example calling **microtest.exclude_modules('validation')** with the following set of filepaths:
 
 *tests/test_login.py*
 <br>
@@ -159,15 +169,15 @@ The exclude_modules function will filter those modules out which filepath contai
 <br>
 *tests/**validation**s/test_usernames.py*
 
-will result to only filepaths *tests/test_login.py* and *tests/test_registering.py*.
+will result only *tests/test_login.py* and *tests/test_registering.py* to be executed.
 The parts that matched the restriction are highlighted.
 
 Calling only_modules will result to execution of only those modules which filepath contains any of the given strings. This is the opposite of exclude_modules.
 
-For example calling microtest.only_modules('validation') with the same set of filepaths
-will result to filepaths *tests/test_form_**validation**.py*,
-*tests/**validation**s/test_emails.py* and *tests/**validation**s/test_usernames.py*.
-The parts that matched the restriction are highlighted. This is true even if exclude_modules was called with restrictions that might filter out some of these modules out.
+For example calling **microtest.only_modules('validation')** with the same set of filepaths
+will result to  *tests/test_form_**validation**.py*,
+*tests/**validation**s/test_emails.py* and *tests/**validation**s/test_usernames.py* be executed.
+The parts that matched the restriction are highlighted.
 
 <br>
 
@@ -287,13 +297,17 @@ Yes, even the variable names must match. This ensures that there is the correct 
 
 <br>
 
-**log_start_info**()<br>
+```python
+log_start_info()
+```
 Function called when testing is started.
 The default implementation logs the 'Started testing...' message.
 
 <br>
 
-**log_test_info**(name: str, result: str, exc: Exception | None)<br>
+```python
+log_test_info(name: str, result: str, exc: Exception | None)
+```
 Function called for every test executed.
 <br>
 *name* is a string which is the name of the test function.
@@ -311,7 +325,9 @@ Result.ERROR means that some other exception was raised.
 
 <br>
 
-**log_module_exec_error**(module_path: str, exc_type: Class, exc: Exception, tb: Traceback)<br>
+```python
+log_module_exec_error(module_path: str, exc_type: Class, exc: Exception, tb: Traceback)
+```
 Function called when an unhandled exception is raised during module execution (outside of test functions)
 <br>
 *module_path* is the absolute filepath of this module as a string.
@@ -324,13 +340,17 @@ Function called when an unhandled exception is raised during module execution (o
 
 <br>
 
-**log_module_info**(module_path: str)<br>
+```python
+log_module_info(module_path: str)
+```
 Function called before the module is executed.
 *module_path* is the absolute filepath of this module as a string.
 
 <br>
 
-**log_results**(tests: int, failed: int, errors: int, time: float)<br>
+```python
+log_results(tests: int, failed: int, errors: int, time: float)
+```
 Function to be called after all tests are executed.
 This should not be used to do any cleanup actions.
 <br>
@@ -344,7 +364,9 @@ This should not be used to do any cleanup actions.
 
 <br>
 
-**terminate**()<br>
+```python
+terminate()
+```
 Function guarateed to be called before the program exits.
 Do cleanup operations here.
 
@@ -373,6 +395,7 @@ Here's an example of a config I've used in some of my Flask projects:
 ```python
 import microtest
 import os
+import re
 import tempfile
 
 from application import create_app
@@ -480,19 +503,18 @@ def setup():
 ```
 
 Here the TestClient is defined as utility, which means that it is injected into every test
-modules namespace when executed. This simply replaces imports.
+module's namespace when executed. This simply replaces imports.
 
 The setup function decorated with the **microtest.call** decorator is called only if microtest
 is doing configuration or running.
 This acts similiarly as the *if \_\_name\_\_ == '\_\_main\_\_'* guard.
 It prevents the setup function to be called if this module would be imported,
-but calls it when microtest is in the config step.
+but calls it when microtest is in the configuration step.
 
 Inside the setup function a temporary file is created for the sqlite database and the actual Flask
-application instance. This application instance is shared between all test modules, so it is
-added as a resource.
+application instance is initialized. This application instance is shared between all test modules, so it is added as a resource.
 
-The temporary file is removed up in the cleanup function.
+The temporary file is deleted in the cleanup function.
 
 <br>
 

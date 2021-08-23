@@ -2,10 +2,10 @@
 
 ## User guide
 - [Basics](basics.md)
-- [Running](running.md)
 - [Fixtures](fixtures.md)
 - [Resources](resources.md)
 - [Utilites](utilities.md)
+- [Running](running.md)
 - [Config](config.md)
 - [Tools](tools.md)
 
