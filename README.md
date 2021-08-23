@@ -48,7 +48,11 @@ ERRORS: 0
 FAILED: 1
 ```
 
-See the full microtest documentation [here](docs/index.md) for user guide and refrence of the source modules.
+<br>
+
+## Documentation
+
+Full source code refrence and user guide can be found [here](https://varajala.github.io/microtest/docs/).
 
 <br>
 

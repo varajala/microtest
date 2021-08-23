@@ -6,8 +6,8 @@ Back to [docs](index.md)...
 
 Microtest provides some useful testing tools for making common testing tasks easier.
 
-  - [Namespaces](#namespace)
-  - [Patching](#patch)
+  - [Namespaces](#namespaces)
+  - [Patching](#patching)
   - [Expecting Erros](#expecting-errors)
   - [Temporary Directory](#temporary-directory)
   - [Restricting File Access](#restricting-file-access)
@@ -205,14 +205,14 @@ if __name__ == '__main__':
 
 ### Temporary Directory
 
-Microtest provides a slightly extended version of tempfile.TemporaryDirectory.
+Microtest provides a slightly extended version of **tempfile.TemporaryDirectory**.
 It allows to populate the directory easily and remove all of its contents
 without removing the actual directory.
 
-See [https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory) for more info on the tempfile.TemporaryDirectory and its usage.
+See [https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory](https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryDirectory) for more info on the **tempfile.TemporaryDirectory** and its usage.
 
 The microtest TemporaryDirectory offers the same methods and properties as
-the tempfile.TemporaryDirectory but adds the following methods and properties:
+the **tempfile.TemporaryDirectory** but adds the following methods and properties:
 
 
 ```python
@@ -246,7 +246,7 @@ def create_temp_dir(files = list(), dirs = list()) -> TemporaryDirectory:
 ```
 
 The **TemporaryDirectory** class and the **create_temp_dir** function
-are located in the microtest.utils module.
+are located in the **microtest.utils** module.
 
 <br>
 
@@ -313,7 +313,7 @@ def test_unauthorized_files(path):
 ```
 <br>
 
-The **set_as_unauthorized** function is located in the microtest.utils module.
+The **set_as_unauthorized** function is located in the **microtest.utils** module.
 
 <br>
 
@@ -358,7 +358,7 @@ class Process:
   def terminate(self):
     """Terminate the running process and close the output stream."""
 ```
-The **start_wsgi_server** function is located in the microtest.utils module.
+The **start_wsgi_server** function is located in the **microtest.utils** module.
 
 <br>
 
@@ -375,7 +375,7 @@ If wait is True this call blocks until a connection can be established with the 
 The server is executed in another process.
 The returned Process instance is similiar to one returned by **start_wsgi_server**.
 
-The **start_smtp_server** function is located in the microtest.utils module.
+The **start_smtp_server** function is located in the **microtest.utils** module.
 
 <br>
 
