@@ -131,7 +131,7 @@ def set_as_unauthorized(path: str) -> Types.Union[UnauthorizedFile, Unauthorized
   $ chmod u-rwx directory
   """
 
-def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Process:
+def start_smtp_server(*, port: int, wait = True, host: str = '127.0.0.1') -> Process:
   """
   Start a debug SMTP server on host:port.
   If wait is True, this call blocks until a connection can be established with the server.
@@ -139,7 +139,7 @@ def start_smtp_server(*, port: int, wait = True, host: str = 'localhost') -> Pro
   Uses the builtin smtd.DebuggingServer.
   """
 
-def start_wsgi_server(wsgi_app: object, *, port: int, host: str = 'localhost', wait = True) -> Process:
+def start_wsgi_server(wsgi_app: object, *, port: int, host: str = '127.0.0.1', wait = True) -> Process:
   """
   Start a debug web server that serves the WSGI application wsgi_app.
   The provided wsgi_app object must be a valid WSGI application specified by PEP 3333.

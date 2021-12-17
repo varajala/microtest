@@ -11,7 +11,7 @@ def long_desc():
 
 setup(
     name='microtest-framework',
-    version='1.0.0',
+    version='1.0.1',
     
     author='Valtteri Rajalainen',
     author_email='rajalainen.valtteri@gmail.com',
